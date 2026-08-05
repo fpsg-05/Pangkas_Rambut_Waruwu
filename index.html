@@ -762,190 +762,187 @@
     </div>
 
     <!-- LOGIKA FIREBASE + ALPINE JAVASCRIPT -->
-<!-- KODE FIREBASE + ALPINE JAVASCRIPT YANG SUDAH TERHUBUNG REAL-TIME FIRESTORE -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { 
-            getFirestore, 
-            collection, 
-            addDoc, 
-            onSnapshot, 
-            deleteDoc, 
-            doc 
-        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+<!-- FIREBASE + ALPINE JAVASCRIPT FIXED -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { 
+        getFirestore, 
+        collection, 
+        addDoc, 
+        onSnapshot, 
+        deleteDoc, 
+        doc 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDLYxgQwQgLcHEWdnv3XIvEmCrEfIhqTWw",
-            authDomain: "pangkas-rambut-nias.firebaseapp.com",
-            projectId: "pangkas-rambut-nias",
-            storageBucket: "pangkas-rambut-nias.firebasestorage.app",
-            messagingSenderId: "1059679701423",
-            appId: "1:1059679701423:web:1e0d33bc5c35e3c0d0875a"
-        };
+    const firebaseConfig = {
+        apiKey: "AIzaSyDLYxgQwQgLcHEWdnv3XIvEmCrEfIhqTWw",
+        authDomain: "pangkas-rambut-nias.firebaseapp.com",
+        projectId: "pangkas-rambut-nias",
+        storageBucket: "pangkas-rambut-nias.firebasestorage.app",
+        messagingSenderId: "1059679701423",
+        appId: "1:1059679701423:web:1e0d33bc5c35e3c0d0875a"
+    };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-        // Tempelkan ke window
-        window.db = db;
-        window.collection = collection;
-        window.addDoc = addDoc;
-        window.onSnapshot = onSnapshot;
-        window.deleteDoc = deleteDoc;
-        window.doc = doc;
-    </script>
+    // Tempelkan fungsi Firebase ke scope window agar bisa dibaca Alpine.js
+    window.db = db;
+    window.collection = collection;
+    window.addDoc = addDoc;
+    window.onSnapshot = onSnapshot;
+    window.deleteDoc = deleteDoc;
+    window.doc = doc;
+</script>
 
-    <script>
-        let chartInstances = {};
+<script>
+    let chartInstances = {};
 
-        function barberApp() {
-            return {
-                activeTab: 'dashboard',
-                currentUser: 'Admin Waruwu',
-                storeIsOpen: localStorage.getItem('barber_store_open') === 'true',
-                openTimeStr: localStorage.getItem('barber_open_time') || '',
-                timerSeconds: parseInt(localStorage.getItem('barber_timer_sec') || '0'),
-                timerInterval: null,
-                timerString: '00:00:00',
-                dailyTarget: parseInt(localStorage.getItem('barber_target') || '500000'),
-                searchQuery: '',
-                showReceiptModal: false,
-                selectedReceipt: null,
-                reportPeriod: 'today',
-                selectedIncomeFilter: 'today',
+    function barberApp() {
+        return {
+            activeTab: 'dashboard',
+            currentUser: 'Admin Waruwu',
+            storeIsOpen: localStorage.getItem('barber_store_open') === 'true',
+            openTimeStr: localStorage.getItem('barber_open_time') || '',
+            timerSeconds: parseInt(localStorage.getItem('barber_timer_sec') || '0'),
+            timerInterval: null,
+            timerString: '00:00:00',
+            dailyTarget: parseInt(localStorage.getItem('barber_target') || '500000'),
+            searchQuery: '',
+            showReceiptModal: false,
+            selectedReceipt: null,
+            reportPeriod: 'today',
+            selectedIncomeFilter: 'today',
 
-                prices: {
-                    'Anak-anak': 15000,
-                    'Dewasa': 20000,
-                    'None': 0,
-                    'Pijat': 5000,
-                    'Keramas': 5000,
-                    'CatRambut': 30000
-                },
+            prices: {
+                'Anak-anak': 15000,
+                'Dewasa': 20000,
+                'None': 0,
+                'Pijat': 5000,
+                'Keramas': 5000,
+                'CatRambut': 30000
+            },
 
-                posForm: {
-                    customerName: '',
-                    category: 'Dewasa',
-                    hasPijat: false,
-                    hasKeramas: false,
-                    hasCatRambut: false,
-                    payAmount: ''
-                },
+            posForm: {
+                customerName: '',
+                category: 'Dewasa',
+                hasPijat: false,
+                hasKeramas: false,
+                hasCatRambut: false,
+                payAmount: ''
+            },
 
-                expenseForm: {
-                    date: new Date().toISOString().split('T')[0],
-                    category: 'Listrik',
-                    description: '',
-                    amount: ''
-                },
+            expenseForm: {
+                date: new Date().toISOString().split('T')[0],
+                category: 'Listrik',
+                description: '',
+                amount: ''
+            },
 
-                // Dikosongkan awal, nanti diisi otomatis secara real-time dari Firestore
-                transactions: [],
-                expenses: [],
+            transactions: [],
+            expenses: [],
 
-                init() {
-                    if (this.storeIsOpen) this.startTimer();
-                    this.updateTimerStr();
+            init() {
+            if (this.storeIsOpen) this.startTimer();
+            this.updateTimerStr();
 
-                    // 1. DENGARKAN DATA TRANSAKSI REAL-TIME DARI FIRESTORE
-                    // Dengarkan koleksi "transaksi" (bukan "transactions")
-                    onSnapshot(collection(db, "transaksi"), (snapshot) => {
-                        let txs = [];
-                        snapshot.forEach((docSnap) => {
-                            const data = docSnap.data();
-                            txs.push({ 
-                                firestoreId: docSnap.id, 
-                                ...data,
-                                // Pemetaan balik agar UI Alpine.js membaca variabel dengan benar
-                                invoiceNo: data.fakturNo || data.invoiceNo,
-                                category: data.kategori || data.category,
-                                payAmount: data.bayarJumlah || data.payAmount,
-                                timestamp: data["cap waktu"] || data.timestamp
-                            });
-                        });
-                        this.transactions = txs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                        this.renderCharts();
+            // 1. DENGARKAN DATA TRANSAKSI REAL-TIME DARI FIRESTORE
+            // Tambahkan "window." di depan onSnapshot, collection, dan db
+            window.onSnapshot(window.collection(window.db, "transaksi"), (snapshot) => {
+                let txs = [];
+                snapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    txs.push({ 
+                        firestoreId: docSnap.id, 
+                        ...data,
+                        invoiceNo: data.fakturNo || data.invoiceNo,
+                        category: data.kategori || data.category,
+                        payAmount: data.bayarJumlah || data.payAmount,
+                        timestamp: data["cap waktu"] || data.timestamp
                     });
+                });
+                this.transactions = txs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                this.renderCharts();
+            });
 
-                    // 2. DENGARKAN DATA PENGELUARAN REAL-TIME DARI FIRESTORE
-                    window.onSnapshot(window.collection(window.db, "expenses"), (snapshot) => {
-                        let exps = [];
-                        snapshot.forEach((docSnap) => {
-                            exps.push({ firestoreId: docSnap.id, ...docSnap.data() });
-                        });
-                        this.expenses = exps.sort((a, b) => new Date(b.date) - new Date(a.date));
-                    });
+            // 2. DENGARKAN DATA PENGELUARAN REAL-TIME DARI FIRESTORE
+            window.onSnapshot(window.collection(window.db, "expenses"), (snapshot) => {
+                let exps = [];
+                snapshot.forEach((docSnap) => {
+                    exps.push({ firestoreId: docSnap.id, ...docSnap.data() });
+                });
+                this.expenses = exps.sort((a, b) => new Date(b.date) - new Date(a.date));
+            });
 
-                    this.$watch('activeTab', (tab) => {
-                        if (tab === 'reports' || tab === 'dashboard') {
-                            this.$nextTick(() => { this.renderCharts(); });
-                        }
-                    });
-
+            this.$watch('activeTab', (tab) => {
+                if (tab === 'reports' || tab === 'dashboard') {
                     this.$nextTick(() => { this.renderCharts(); });
-                },
+                }
+            });
 
-                toggleStoreStatus() {
-                    this.storeIsOpen = !this.storeIsOpen;
-                    localStorage.setItem('barber_store_open', this.storeIsOpen);
-                    
-                    if (this.storeIsOpen) {
-                        const now = new Date();
-                        this.openTimeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
-                        localStorage.setItem('barber_open_time', this.openTimeStr);
-                        this.timerSeconds = 0;
-                        this.startTimer();
-                    } else {
-                        clearInterval(this.timerInterval);
-                        this.timerSeconds = 0;
-                        localStorage.setItem('barber_timer_sec', '0');
-                        this.updateTimerStr();
-                    }
-                },
+            this.$nextTick(() => { this.renderCharts(); });
+        },
 
-                startTimer() {
+            toggleStoreStatus() {
+                this.storeIsOpen = !this.storeIsOpen;
+                localStorage.setItem('barber_store_open', this.storeIsOpen);
+                
+                if (this.storeIsOpen) {
+                    const now = new Date();
+                    this.openTimeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+                    localStorage.setItem('barber_open_time', this.openTimeStr);
+                    this.timerSeconds = 0;
+                    this.startTimer();
+                } else {
                     clearInterval(this.timerInterval);
-                    this.timerInterval = setInterval(() => {
-                        this.timerSeconds++;
-                        localStorage.setItem('barber_timer_sec', this.timerSeconds.toString());
-                        this.updateTimerStr();
-                    }, 1000);
-                },
+                    this.timerSeconds = 0;
+                    localStorage.setItem('barber_timer_sec', '0');
+                    this.updateTimerStr();
+                }
+            },
 
-                updateTimerStr() {
-                    const hrs = Math.floor(this.timerSeconds / 3600).toString().padStart(2, '0');
-                    const mins = Math.floor((this.timerSeconds % 3600) / 60).toString().padStart(2, '0');
-                    const secs = (this.timerSeconds % 60).toString().padStart(2, '0');
-                    this.timerString = `${hrs}:${mins}:${secs}`;
-                },
+            startTimer() {
+                clearInterval(this.timerInterval);
+                this.timerInterval = setInterval(() => {
+                    this.timerSeconds++;
+                    localStorage.setItem('barber_timer_sec', this.timerSeconds.toString());
+                    this.updateTimerStr();
+                }, 1000);
+            },
 
-                calculatePOSTotal() {
-                    let total = this.prices[this.posForm.category] || 0;
-                    if (this.posForm.hasPijat) total += this.prices['Pijat'];
-                    if (this.posForm.hasKeramas) total += this.prices['Keramas'];
-                    if (this.posForm.hasCatRambut) total += this.prices['CatRambut'];
-                    return total;
-                },
+            updateTimerStr() {
+                const hrs = Math.floor(this.timerSeconds / 3600).toString().padStart(2, '0');
+                const mins = Math.floor((this.timerSeconds % 3600) / 60).toString().padStart(2, '0');
+                const secs = (this.timerSeconds % 60).toString().padStart(2, '0');
+                this.timerString = `${hrs}:${mins}:${secs}`;
+            },
 
-                calculateChange() {
-                    const total = this.calculatePOSTotal();
-                    const pay = this.posForm.payAmount || 0;
-                    return pay >= total ? pay - total : 0;
-                },
+            calculatePOSTotal() {
+                let total = this.prices[this.posForm.category] || 0;
+                if (this.posForm.hasPijat) total += this.prices['Pijat'];
+                if (this.posForm.hasKeramas) total += this.prices['Keramas'];
+                if (this.posForm.hasCatRambut) total += this.prices['CatRambut'];
+                return total;
+            },
 
-                generateInvoiceNumber() {
-                    const d = new Date();
-                    const yyyy = d.getFullYear();
-                    const mm = String(d.getMonth() + 1).padStart(2, '0');
-                    const dd = String(d.getDate()).padStart(2, '0');
-                    const todayPrefix = `PRN-${yyyy}${mm}${dd}`;
-                    
-                    const todayCount = this.transactions.filter(t => t.invoiceNo && t.invoiceNo.startsWith(todayPrefix)).length + 1;
-                    return `#${todayPrefix}${String(todayCount).padStart(2, '0')}`;
-                },
+            calculateChange() {
+                const total = this.calculatePOSTotal();
+                const pay = this.posForm.payAmount || 0;
+                return pay >= total ? pay - total : 0;
+            },
 
-                // 3. SIMPAN TRANSAKSI KE FIRESTORE (KIRIM KE AWAN)
-                async saveTransaction() {
+            generateInvoiceNumber() {
+                const d = new Date();
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                const todayPrefix = `PRN-${yyyy}${mm}${dd}`;
+                
+                const todayCount = this.transactions.filter(t => t.invoiceNo && t.invoiceNo.startsWith(todayPrefix)).length + 1;
+                return `#${todayPrefix}${String(todayCount).padStart(2, '0')}`;
+            },
+
+            async saveTransaction() {
                 const total = this.calculatePOSTotal();
                 const pay = Number(this.posForm.payAmount) || total;
 
@@ -959,22 +956,21 @@
                     return;
                 }
 
-                // Nama properti disesuaikan dengan yang ada di screenshot Firestore Anda
                 const newTx = {
                     id: Date.now(),
                     fakturNo: this.generateInvoiceNumber(),
-                    customerName: this.posForm.customerName.trim(),
+                    customerName: this.posForm.customerName.trim() || 'Pelanggan',
                     kategori: this.posForm.category,
                     hasPijat: this.posForm.hasPijat,
                     hasKeramas: this.posForm.hasKeramas,
                     hasCatRambut: this.posForm.hasCatRambut,
                     total: Number(total),
                     bayarJumlah: Number(pay),
-                    "cap waktu": new Date().toISOString() // Disesuaikan dengan "cap waktu" di Firestore
+                    "cap waktu": new Date().toISOString()
                 };
 
                 try {
-                    await addDoc(collection(db, "transaksi"), newTx); // Nama koleksi di gambar adalah "transaksi"
+                    await window.addDoc(window.collection(window.db, "transaksi"), newTx);
                     this.openReceiptModal(newTx);
 
                     this.posForm.customerName = '';
@@ -984,278 +980,246 @@
                     this.posForm.hasCatRambut = false;
                     this.posForm.payAmount = '';
                 } catch (err) {
-                    alert("Gagal menyimpan: " + err.message);
+                    alert("Gagal menyimpan ke Firestore: " + err.message);
+                }
+            },
+
+            async deleteTransaction(tx) {
+                if (confirm('Yakin ingin menghapus riwayat transaksi ini?')) {
+                    try {
+                        if (tx.firestoreId) {
+                            await window.deleteDoc(window.doc(window.db, "transaksi", tx.firestoreId));
+                        }
+                    } catch (err) {
+                        alert("Gagal menghapus: " + err.message);
+                    }
+                }
+            },
+
+            async saveExpense() {
+                if (!this.expenseForm.amount) {
+                    alert('Masukkan nominal pengeluaran!');
+                    return;
                 }
 
+                const newExp = {
+                    id: Date.now(),
+                    date: this.expenseForm.date,
+                    category: this.expenseForm.category,
+                    description: this.expenseForm.description,
+                    amount: Number(this.expenseForm.amount)
+                };
+
+                try {
+                    await window.addDoc(window.collection(window.db, "expenses"), newExp);
+                    this.expenseForm.description = '';
+                    this.expenseForm.amount = '';
+                    alert('Pengeluaran berhasil dicatat!');
+                } catch (err) {
+                    alert("Gagal menyimpan pengeluaran: " + err.message);
+                }
+            },
+
+            async deleteExpense(exp) {
+                if (confirm('Hapus pengeluaran ini?')) {
                     try {
-                        // Kirim ke database Firebase Firestore
-                        await window.addDoc(window.collection(window.db, "transactions"), newTx);
-                        
-                        this.openReceiptModal(newTx);
-
-                        this.posForm.customerName = '';
-                        this.posForm.category = 'Dewasa';
-                        this.posForm.hasPijat = false;
-                        this.posForm.hasKeramas = false;
-                        this.posForm.hasCatRambut = false;
-                        this.posForm.payAmount = '';
+                        if (exp.firestoreId) {
+                            await window.deleteDoc(window.doc(window.db, "expenses", exp.firestoreId));
+                        }
                     } catch (err) {
-                        alert("Gagal menyimpan ke Firebase: " + err.message);
+                        alert("Gagal menghapus: " + err.message);
                     }
-                },
+                }
+            },
 
-                // 4. HAPUS TRANSAKSI DARI FIRESTORE
-                async deleteTransaction(tx) {
-                    if (confirm('Yakin ingin menghapus riwayat transaksi ini?')) {
-                        try {
-                            if (tx.firestoreId) {
-                                await window.deleteDoc(window.doc(window.db, "transactions", tx.firestoreId));
-                            } else {
-                                this.transactions = this.transactions.filter(t => t.id !== tx.id);
-                            }
-                        } catch (err) {
-                            alert("Gagal menghapus: " + err.message);
-                        }
+            get filteredTransactions() {
+                if (!this.searchQuery) return this.transactions;
+                const q = this.searchQuery.toLowerCase();
+                return this.transactions.filter(t => 
+                    (t.customerName && t.customerName.toLowerCase().includes(q)) ||
+                    (t.invoiceNo && t.invoiceNo.toLowerCase().includes(q)) ||
+                    (t.category && t.category.toLowerCase().includes(q))
+                );
+            },
+
+            getIncomeByPeriod(period) {
+                const now = new Date();
+                
+                return this.transactions.reduce((sum, t) => {
+                    const txDate = new Date(t.timestamp);
+                    let isMatch = false;
+
+                    if (period === 'today') {
+                        isMatch = txDate.toDateString() === now.toDateString();
+                    } else if (period === 'week') {
+                        const diffDays = Math.ceil(Math.abs(now - txDate) / (1000 * 60 * 60 * 24));
+                        isMatch = diffDays <= 7;
+                    } else if (period === 'month') {
+                        const diffDays = Math.ceil(Math.abs(now - txDate) / (1000 * 60 * 60 * 24));
+                        isMatch = diffDays <= 30;
+                    } else if (period === 'year') {
+                        const diffDays = Math.ceil(Math.abs(now - txDate) / (1000 * 60 * 60 * 24));
+                        isMatch = diffDays <= 365;
+                    } else if (period === 'all') {
+                        isMatch = true;
                     }
-                },
 
-                // 5. SIMPAN PENGELUARAN KE FIRESTORE
-                async saveExpense() {
-                    if (!this.expenseForm.amount) {
-                        alert('Masukkan nominal pengeluaran!');
-                        return;
-                    }
+                    return isMatch ? sum + (Number(t.total) || 0) : sum;
+                }, 0);
+            },
 
-                    const newExp = {
-                        id: Date.now(),
-                        date: this.expenseForm.date,
-                        category: this.expenseForm.category,
-                        description: this.expenseForm.description,
-                        amount: Number(this.expenseForm.amount)
-                    };
+            getTodayExpenses() {
+                const todayStr = new Date().toISOString().split('T')[0];
+                return this.expenses
+                    .filter(e => e.date === todayStr)
+                    .reduce((sum, e) => sum + Number(e.amount), 0);
+            },
 
-                    try {
-                        await window.addDoc(window.collection(window.db, "expenses"), newExp);
-                        this.expenseForm.description = '';
-                        this.expenseForm.amount = '';
-                        alert('Pengeluaran berhasil dicatat!');
-                    } catch (err) {
-                        alert("Gagal menyimpan pengeluaran: " + err.message);
-                    }
-                },
+            getMonthExpenses() {
+                const monthStr = new Date().toISOString().slice(0, 7);
+                return this.expenses
+                    .filter(e => e.date && e.date.startsWith(monthStr))
+                    .reduce((sum, e) => sum + Number(e.amount), 0);
+            },
 
-                // 6. HAPUS PENGELUARAN DARI FIRESTORE
-                async deleteExpense(exp) {
-                    if (confirm('Hapus pengeluaran ini?')) {
-                        try {
-                            if (exp.firestoreId) {
-                                await window.deleteDoc(window.doc(window.db, "expenses", exp.firestoreId));
-                            } else {
-                                this.expenses = this.expenses.filter(e => e.id !== exp.id);
-                            }
-                        } catch (err) {
-                            alert("Gagal menghapus: " + err.message);
-                        }
-                    }
-                },
+            getTodayCustomerCount() {
+                const now = new Date();
+                return this.transactions.filter(t => {
+                    if (!t.timestamp) return false;
+                    return new Date(t.timestamp).toDateString() === now.toDateString();
+                }).length;
+            },
 
-                get filteredTransactions() {
-                    if (!this.searchQuery) return this.transactions;
-                    const q = this.searchQuery.toLowerCase();
-                    return this.transactions.filter(t => 
-                        (t.customerName && t.customerName.toLowerCase().includes(q)) ||
-                        (t.invoiceNo && t.invoiceNo.toLowerCase().includes(q)) ||
-                        t.category.toLowerCase().includes(q)
-                    );
-                },
+            getTodayBreakdown() {
+                const now = new Date();
+                const todayTxs = this.transactions.filter(t => t.timestamp && new Date(t.timestamp).toDateString() === now.toDateString());
+                
+                let anak = 0, dewasa = 0, pijat = 0, keramas = 0, pijatKeramas = 0, catRambut = 0;
+                todayTxs.forEach(t => {
+                    if (t.category === 'Anak-anak') anak++;
+                    if (t.category === 'Dewasa') dewasa++;
+                    if (t.hasPijat && !t.hasKeramas) pijat++;
+                    if (t.hasKeramas && !t.hasPijat) keramas++;
+                    if (t.hasPijat && t.hasKeramas) pijatKeramas++;
+                    if (t.hasCatRambut) catRambut++;
+                });
 
-                getIncomeByPeriod(period) {
-                    const now = new Date();
-                    
-                    return this.transactions.reduce((sum, t) => {
-                        const txDate = new Date(t.timestamp);
-                        let isMatch = false;
+                return { anak, dewasa, pijat, keramas, pijatKeramas, catRambut };
+            },
 
-                        if (period === 'today') {
-                            isMatch = txDate.toDateString() === now.toDateString();
-                        } else if (period === 'week') {
-                            const diffTime = Math.abs(now - txDate);
-                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                            isMatch = diffDays <= 7;
-                        } else if (period === 'month') {
-                            const diffTime = Math.abs(now - txDate);
-                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                            isMatch = diffDays <= 30;
-                        } else if (period === 'year') {
-                            const diffTime = Math.abs(now - txDate);
-                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                            isMatch = diffDays <= 365;
-                        } else if (period === 'all') {
-                            isMatch = true;
-                        }
+            getTotalExpensesList() {
+                return this.expenses.reduce((sum, e) => sum + Number(e.amount), 0);
+            },
 
-                        return isMatch ? sum + t.total : sum;
-                    }, 0);
-                },
+            formatRupiah(num) {
+                return 'Rp ' + (num || 0).toLocaleString('id-ID');
+            },
 
-                getTodayExpenses() {
-                    const todayStr = new Date().toISOString().split('T')[0];
-                    return this.expenses
-                        .filter(e => e.date === todayStr)
-                        .reduce((sum, e) => sum + Number(e.amount), 0);
-                },
+            formatNum(num) {
+                return (num || 0).toLocaleString('id-ID');
+            },
 
-                getMonthExpenses() {
-                    const monthStr = new Date().toISOString().slice(0, 7);
-                    return this.expenses
-                        .filter(e => e.date.startsWith(monthStr))
-                        .reduce((sum, e) => sum + Number(e.amount), 0);
-                },
+            formatDateShort(isoStr) {
+                if (!isoStr) return '';
+                const d = new Date(isoStr);
+                return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            },
 
-                getTodayCustomerCount() {
-                    const todayStr = new Date().toISOString().split('T')[0];
-                    return this.transactions.filter(t => t.timestamp && t.timestamp.startsWith(todayStr)).length;
-                },
+            formatTimeOnly(isoStr) {
+                if (!isoStr) return '';
+                const d = new Date(isoStr);
+                return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
+            },
 
-                getTodayBreakdown() {
-                    const todayStr = new Date().toISOString().split('T')[0];
-                    const todayTxs = this.transactions.filter(t => t.timestamp && t.timestamp.startsWith(todayStr));
-                    
-                    let anak = 0, dewasa = 0, pijat = 0, keramas = 0, pijatKeramas = 0, catRambut = 0;
-                    todayTxs.forEach(t => {
-                        if (t.category === 'Anak-anak') anak++;
-                        if (t.category === 'Dewasa') dewasa++;
-                        if (t.hasPijat && !t.hasKeramas) pijat++;
-                        if (t.hasKeramas && !t.hasPijat) keramas++;
-                        if (t.hasPijat && t.hasKeramas) pijatKeramas++;
-                        if (t.hasCatRambut) catRambut++;
+            formatDateTimeFull(isoStr) {
+                if (!isoStr) return '';
+                return `${this.formatDateShort(isoStr)} ${this.formatTimeOnly(isoStr)}`;
+            },
+
+            getCurrentDateTimeStr() {
+                return new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            },
+
+            openReceiptModal(tx) {
+                this.selectedReceipt = tx;
+                this.showReceiptModal = true;
+            },
+
+            printReceipt() {
+                window.print();
+            },
+
+            backupData() {
+                const data = {
+                    transactions: this.transactions,
+                    expenses: this.expenses,
+                    dailyTarget: this.dailyTarget
+                };
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `backup_nias_sumut_${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+            },
+
+            renderCharts() {
+                if (chartInstances['dashboardMiniChart']) chartInstances['dashboardMiniChart'].destroy();
+                if (chartInstances['incomeChart']) chartInstances['incomeChart'].destroy();
+                if (chartInstances['customerPieChart']) chartInstances['customerPieChart'].destroy();
+
+                const miniCtx = document.getElementById('dashboardMiniChart');
+                if (miniCtx) {
+                    chartInstances['dashboardMiniChart'] = new Chart(miniCtx, {
+                        type: 'line',
+                        data: {
+                            labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
+                            datasets: [{
+                                data: [150000, 230000, 180000, 300000, 280000, 450000, 380000],
+                                borderColor: '#dc2626',
+                                backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                                fill: true,
+                                tension: 0.3
+                            }]
+                        },
+                        options: { plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false } } } }
                     });
+                }
 
-                    return { anak, dewasa, pijat, keramas, pijatKeramas, catRambut };
-                },
+                const incomeCtx = document.getElementById('incomeChart');
+                if (incomeCtx) {
+                    chartInstances['incomeChart'] = new Chart(incomeCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'],
+                            datasets: [{
+                                label: 'Pendapatan (Rp)',
+                                data: [150000, 230000, 180000, 300000, 280000, 450000, 380000],
+                                backgroundColor: '#dc2626'
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false }
+                    });
+                }
 
-                getTotalExpensesList() {
-                    return this.expenses.reduce((sum, e) => sum + Number(e.amount), 0);
-                },
-
-                formatRupiah(num) {
-                    return 'Rp ' + (num || 0).toLocaleString('id-ID');
-                },
-
-                formatNum(num) {
-                    return (num || 0).toLocaleString('id-ID');
-                },
-
-                formatDateStr(dateStr) {
-                    if (!dateStr) return '';
-                    const d = new Date(dateStr);
-                    return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                },
-
-                formatDateShort(isoStr) {
-                    if (!isoStr) return '';
-                    const d = new Date(isoStr);
-                    const dd = String(d.getDate()).padStart(2, '0');
-                    const mm = String(d.getMonth() + 1).padStart(2, '0');
-                    const yyyy = d.getFullYear();
-                    return `${dd}/${mm}/${yyyy}`;
-                },
-
-                formatTimeOnly(isoStr) {
-                    if (!isoStr) return '';
-                    const d = new Date(isoStr);
-                    return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
-                },
-
-                formatDateTimeFull(isoStr) {
-                    if (!isoStr) return '';
-                    return `${this.formatDateShort(isoStr)} ${this.formatTimeOnly(isoStr)}`;
-                },
-
-                getCurrentDateTimeStr() {
-                    return new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-                },
-
-                openReceiptModal(tx) {
-                    this.selectedReceipt = tx;
-                    this.showReceiptModal = true;
-                },
-
-                printReceipt() {
-                    window.print();
-                },
-
-                backupData() {
-                    const data = {
-                        transactions: this.transactions,
-                        expenses: this.expenses,
-                        dailyTarget: this.dailyTarget
-                    };
-                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `backup_nias_sumut_${new Date().toISOString().split('T')[0]}.json`;
-                    a.click();
-                },
-
-                renderCharts() {
-                    if (chartInstances['dashboardMiniChart']) chartInstances['dashboardMiniChart'].destroy();
-                    if (chartInstances['incomeChart']) chartInstances['incomeChart'].destroy();
-                    if (chartInstances['customerPieChart']) chartInstances['customerPieChart'].destroy();
-
-                    const miniCtx = document.getElementById('dashboardMiniChart');
-                    if (miniCtx) {
-                        chartInstances['dashboardMiniChart'] = new Chart(miniCtx, {
-                            type: 'line',
-                            data: {
-                                labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
-                                datasets: [{
-                                    data: [150000, 230000, 180000, 300000, 280000, 450000, 380000],
-                                    borderColor: '#dc2626',
-                                    backgroundColor: 'rgba(220, 38, 38, 0.1)',
-                                    fill: true,
-                                    tension: 0.3
-                                }]
-                            },
-                            options: { plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false } } } }
-                        });
-                    }
-
-                    const incomeCtx = document.getElementById('incomeChart');
-                    if (incomeCtx) {
-                        chartInstances['incomeChart'] = new Chart(incomeCtx, {
-                            type: 'bar',
-                            data: {
-                                labels: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'],
-                                datasets: [{
-                                    label: 'Pendapatan (Rp)',
-                                    data: [150000, 230000, 180000, 300000, 280000, 450000, 380000],
-                                    backgroundColor: '#dc2626'
-                                }]
-                            },
-                            options: { responsive: true, maintainAspectRatio: false }
-                        });
-                    }
-
-                    const pieCtx = document.getElementById('customerPieChart');
-                    if (pieCtx) {
-                        chartInstances['customerPieChart'] = new Chart(pieCtx, {
-                            type: 'doughnut',
-                            data: {
-                                labels: ['Dewasa', 'Anak-anak', 'Cat Rambut', 'Pijat/Keramas'],
-                                datasets: [{
-                                    data: [50, 25, 15, 10],
-                                    backgroundColor: ['#dc2626', '#2563eb', '#9333ea', '#10b981']
-                                }]
-                            },
-                            options: { responsive: true, maintainAspectRatio: false }
-                        });
-                    }
+                const pieCtx = document.getElementById('customerPieChart');
+                if (pieCtx) {
+                    chartInstances['customerPieChart'] = new Chart(pieCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Dewasa', 'Anak-anak', 'Cat Rambut', 'Pijat/Keramas'],
+                            datasets: [{
+                                data: [50, 25, 15, 10],
+                                backgroundColor: ['#dc2626', '#2563eb', '#9333ea', '#10b981']
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false }
+                    });
                 }
             }
         }
-    </script>
+    }
+</script>
     <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { 

@@ -762,8 +762,17 @@
     </div>
 
     <!-- LOGIKA FIREBASE + ALPINE JAVASCRIPT -->
+<!-- KODE FIREBASE + ALPINE JAVASCRIPT YANG SUDAH TERHUBUNG REAL-TIME FIRESTORE -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { 
+            getFirestore, 
+            collection, 
+            addDoc, 
+            onSnapshot, 
+            deleteDoc, 
+            doc 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDLYxgQwQgLcHEWdnv3XIvEmCrEfIhqTWw",
@@ -775,10 +784,18 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Tempelkan ke window
+        window.db = db;
+        window.collection = collection;
+        window.addDoc = addDoc;
+        window.onSnapshot = onSnapshot;
+        window.deleteDoc = deleteDoc;
+        window.doc = doc;
     </script>
 
     <script>
-        // Simpan instance chart secara global agar bisa di-destroy sebelum dirender ulang
         let chartInstances = {};
 
         function barberApp() {
@@ -797,7 +814,6 @@
                 reportPeriod: 'today',
                 selectedIncomeFilter: 'today',
 
-                // Disesuaikan persis dengan harga pada tampilan UI POS
                 prices: {
                     'Anak-anak': 15000,
                     'Dewasa': 20000,
@@ -823,16 +839,33 @@
                     amount: ''
                 },
 
-                transactions: JSON.parse(localStorage.getItem('barber_transactions') || '[]'),
-                expenses: JSON.parse(localStorage.getItem('barber_expenses') || '[]'),
+                // Dikosongkan awal, nanti diisi otomatis secara real-time dari Firestore
+                transactions: [],
+                expenses: [],
 
                 init() {
                     if (this.storeIsOpen) this.startTimer();
                     this.updateTimerStr();
 
-                    if (this.transactions.length === 0) {
-                        this.seedDemoData();
-                    }
+                    // 1. DENGARKAN DATA TRANSAKSI REAL-TIME DARI FIRESTORE
+                    window.onSnapshot(window.collection(window.db, "transactions"), (snapshot) => {
+                        let txs = [];
+                        snapshot.forEach((docSnap) => {
+                            txs.push({ firestoreId: docSnap.id, ...docSnap.data() });
+                        });
+                        // Urutkan dari yang paling baru
+                        this.transactions = txs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                        this.renderCharts();
+                    });
+
+                    // 2. DENGARKAN DATA PENGELUARAN REAL-TIME DARI FIRESTORE
+                    window.onSnapshot(window.collection(window.db, "expenses"), (snapshot) => {
+                        let exps = [];
+                        snapshot.forEach((docSnap) => {
+                            exps.push({ firestoreId: docSnap.id, ...docSnap.data() });
+                        });
+                        this.expenses = exps.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    });
 
                     this.$watch('activeTab', (tab) => {
                         if (tab === 'reports' || tab === 'dashboard') {
@@ -902,7 +935,8 @@
                     return `#${todayPrefix}${String(todayCount).padStart(2, '0')}`;
                 },
 
-                saveTransaction() {
+                // 3. SIMPAN TRANSAKSI KE FIRESTORE (KIRIM KE AWAN)
+                async saveTransaction() {
                     const total = this.calculatePOSTotal();
                     const pay = this.posForm.payAmount || total;
 
@@ -929,47 +963,75 @@
                         timestamp: new Date().toISOString()
                     };
 
-                    this.transactions.unshift(newTx);
-                    localStorage.setItem('barber_transactions', JSON.stringify(this.transactions));
+                    try {
+                        // Kirim ke database Firebase Firestore
+                        await window.addDoc(window.collection(window.db, "transactions"), newTx);
+                        
+                        this.openReceiptModal(newTx);
 
-                    this.openReceiptModal(newTx);
-
-                    this.posForm.customerName = '';
-                    this.posForm.category = 'Dewasa';
-                    this.posForm.hasPijat = false;
-                    this.posForm.hasKeramas = false;
-                    this.posForm.hasCatRambut = false;
-                    this.posForm.payAmount = '';
-                },
-
-                deleteTransaction(id) {
-                    if (confirm('Yakin ingin menghapus riwayat transaksi ini?')) {
-                        this.transactions = this.transactions.filter(t => t.id !== id);
-                        localStorage.setItem('barber_transactions', JSON.stringify(this.transactions));
+                        this.posForm.customerName = '';
+                        this.posForm.category = 'Dewasa';
+                        this.posForm.hasPijat = false;
+                        this.posForm.hasKeramas = false;
+                        this.posForm.hasCatRambut = false;
+                        this.posForm.payAmount = '';
+                    } catch (err) {
+                        alert("Gagal menyimpan ke Firebase: " + err.message);
                     }
                 },
 
-                saveExpense() {
+                // 4. HAPUS TRANSAKSI DARI FIRESTORE
+                async deleteTransaction(tx) {
+                    if (confirm('Yakin ingin menghapus riwayat transaksi ini?')) {
+                        try {
+                            if (tx.firestoreId) {
+                                await window.deleteDoc(window.doc(window.db, "transactions", tx.firestoreId));
+                            } else {
+                                this.transactions = this.transactions.filter(t => t.id !== tx.id);
+                            }
+                        } catch (err) {
+                            alert("Gagal menghapus: " + err.message);
+                        }
+                    }
+                },
+
+                // 5. SIMPAN PENGELUARAN KE FIRESTORE
+                async saveExpense() {
+                    if (!this.expenseForm.amount) {
+                        alert('Masukkan nominal pengeluaran!');
+                        return;
+                    }
+
                     const newExp = {
                         id: Date.now(),
                         date: this.expenseForm.date,
                         category: this.expenseForm.category,
                         description: this.expenseForm.description,
-                        amount: this.expenseForm.amount
+                        amount: Number(this.expenseForm.amount)
                     };
 
-                    this.expenses.unshift(newExp);
-                    localStorage.setItem('barber_expenses', JSON.stringify(this.expenses));
-
-                    this.expenseForm.description = '';
-                    this.expenseForm.amount = '';
-                    alert('Pengeluaran berhasil dicatat!');
+                    try {
+                        await window.addDoc(window.collection(window.db, "expenses"), newExp);
+                        this.expenseForm.description = '';
+                        this.expenseForm.amount = '';
+                        alert('Pengeluaran berhasil dicatat!');
+                    } catch (err) {
+                        alert("Gagal menyimpan pengeluaran: " + err.message);
+                    }
                 },
 
-                deleteExpense(id) {
+                // 6. HAPUS PENGELUARAN DARI FIRESTORE
+                async deleteExpense(exp) {
                     if (confirm('Hapus pengeluaran ini?')) {
-                        this.expenses = this.expenses.filter(e => e.id !== id);
-                        localStorage.setItem('barber_expenses', JSON.stringify(this.expenses));
+                        try {
+                            if (exp.firestoreId) {
+                                await window.deleteDoc(window.doc(window.db, "expenses", exp.firestoreId));
+                            } else {
+                                this.expenses = this.expenses.filter(e => e.id !== exp.id);
+                            }
+                        } catch (err) {
+                            alert("Gagal menghapus: " + err.message);
+                        }
                     }
                 },
 
@@ -1016,24 +1078,24 @@
                     const todayStr = new Date().toISOString().split('T')[0];
                     return this.expenses
                         .filter(e => e.date === todayStr)
-                        .reduce((sum, e) => sum + e.amount, 0);
+                        .reduce((sum, e) => sum + Number(e.amount), 0);
                 },
 
                 getMonthExpenses() {
                     const monthStr = new Date().toISOString().slice(0, 7);
                     return this.expenses
                         .filter(e => e.date.startsWith(monthStr))
-                        .reduce((sum, e) => sum + e.amount, 0);
+                        .reduce((sum, e) => sum + Number(e.amount), 0);
                 },
 
                 getTodayCustomerCount() {
                     const todayStr = new Date().toISOString().split('T')[0];
-                    return this.transactions.filter(t => t.timestamp.startsWith(todayStr)).length;
+                    return this.transactions.filter(t => t.timestamp && t.timestamp.startsWith(todayStr)).length;
                 },
 
                 getTodayBreakdown() {
                     const todayStr = new Date().toISOString().split('T')[0];
-                    const todayTxs = this.transactions.filter(t => t.timestamp.startsWith(todayStr));
+                    const todayTxs = this.transactions.filter(t => t.timestamp && t.timestamp.startsWith(todayStr));
                     
                     let anak = 0, dewasa = 0, pijat = 0, keramas = 0, pijatKeramas = 0, catRambut = 0;
                     todayTxs.forEach(t => {
@@ -1049,7 +1111,7 @@
                 },
 
                 getTotalExpensesList() {
-                    return this.expenses.reduce((sum, e) => sum + e.amount, 0);
+                    return this.expenses.reduce((sum, e) => sum + Number(e.amount), 0);
                 },
 
                 formatRupiah(num) {
@@ -1113,71 +1175,7 @@
                     a.click();
                 },
 
-                restoreData(event) {
-                    const file = event.target.files[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        try {
-                            const data = JSON.parse(e.target.result);
-                            if (data.transactions) this.transactions = data.transactions;
-                            if (data.expenses) this.expenses = data.expenses;
-                            localStorage.setItem('barber_transactions', JSON.stringify(this.transactions));
-                            localStorage.setItem('barber_expenses', JSON.stringify(this.expenses));
-                            alert('Database berhasil di-restore!');
-                            location.reload();
-                        } catch (err) {
-                            alert('File JSON backup tidak valid!');
-                        }
-                    };
-                    reader.readAsText(file);
-                },
-
-                exportToExcel() {
-                    const data = this.transactions.map(t => ({
-                        Faktur: t.invoiceNo,
-                        Tanggal: this.formatDateShort(t.timestamp),
-                        Jam: this.formatTimeOnly(t.timestamp),
-                        Pelanggan: t.customerName || 'Pelanggan Umum',
-                        Kategori: t.category,
-                        CatRambut: t.hasCatRambut ? 'Ya' : 'Tidak',
-                        Pijat: t.hasPijat ? 'Ya' : 'Tidak',
-                        Keramas: t.hasKeramas ? 'Ya' : 'Tidak',
-                        Total: t.total,
-                        Bayar: t.payAmount || t.total,
-                        Kembali: (t.payAmount || t.total) - t.total
-                    }));
-
-                    const ws = XLSX.utils.json_to_sheet(data);
-                    const wb = XLSX.utils.book_new();
-                    XLSX.utils.book_append_sheet(wb, ws, "Faktur Transaksi");
-                    XLSX.writeFile(wb, `Laporan_Pangkas_Nias_Sumut_${new Date().toISOString().split('T')[0]}.xlsx`);
-                },
-
-                exportToPDF() {
-                    const { jsPDF } = window.jspdf;
-                    const doc = new jsPDF();
-                    doc.text("Laporan Transaksi - PANGKAS RAMBUT NIAS SUMUT", 14, 15);
-                    
-                    const tableData = this.transactions.map(t => [
-                        t.invoiceNo,
-                        this.formatDateTimeFull(t.timestamp),
-                        t.customerName || 'Pelanggan Umum',
-                        t.category === 'None' ? 'Layanan Saja' : t.category,
-                        this.formatRupiah(t.total)
-                    ]);
-
-                    doc.autoTable({
-                        head: [['No. Faktur', 'Waktu', 'Pelanggan', 'Kategori', 'Total']],
-                        body: tableData,
-                        startY: 20
-                    });
-
-                    doc.save(`Laporan_Pangkas_Nias_Sumut_${new Date().toISOString().split('T')[0]}.pdf`);
-                },
-
                 renderCharts() {
-                    // Mencegah error Re-render Chart.js
                     if (chartInstances['dashboardMiniChart']) chartInstances['dashboardMiniChart'].destroy();
                     if (chartInstances['incomeChart']) chartInstances['incomeChart'].destroy();
                     if (chartInstances['customerPieChart']) chartInstances['customerPieChart'].destroy();
@@ -1230,49 +1228,42 @@
                             options: { responsive: true, maintainAspectRatio: false }
                         });
                     }
-                },
-
-                seedDemoData() {
-                    const todayStr = new Date().toISOString().split('T')[0];
-                    this.transactions = [
-                        { id: 1, invoiceNo: '#PRN-2026080501', customerName: 'Pelanggan Cat Only', category: 'None', hasPijat: false, hasKeramas: false, hasCatRambut: true, total: 30000, payAmount: 30000, timestamp: todayStr + 'T16:46:00' },
-                        { id: 2, invoiceNo: '#PRN-2026080502', customerName: 'Budi', category: 'Dewasa', hasPijat: false, hasKeramas: true, hasCatRambut: true, total: 55000, payAmount: 100000, timestamp: todayStr + 'T17:10:00' }
-                    ];
-                    this.expenses = [
-                        { id: 101, date: todayStr, category: 'Listrik', description: 'Token Harian Toko', amount: 20000 }
-                    ];
-                    localStorage.setItem('barber_transactions', JSON.stringify(this.transactions));
-                    localStorage.setItem('barber_expenses', JSON.stringify(this.expenses));
                 }
             }
         }
     </script>
     <script type="module">
-      // 1. Import fungsi yang dibutuhkan dari SDK Firebase
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-      import { 
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { 
         getFirestore, 
         collection, 
         addDoc, 
-        onSnapshot 
-      } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        getDocs, 
+        onSnapshot, 
+        deleteDoc, 
+        doc 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-      // 2. Konfigurasi Firebase Anda
-      const firebaseConfig = {
+    const firebaseConfig = {
         apiKey: "AIzaSyDLYxgQwQgLcHEWdnv3XIvEmCrEfIhqTWw",
         authDomain: "pangkas-rambut-nias.firebaseapp.com",
         projectId: "pangkas-rambut-nias",
         storageBucket: "pangkas-rambut-nias.firebasestorage.app",
         messagingSenderId: "1059679701423",
         appId: "1:1059679701423:web:1e0d33bc5c35e3c0d0875a"
-      };
+    };
 
-      // 3. Inisialisasi Aplikasi & Database Firebase
-      const app = initializeApp(firebaseConfig);
-      const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-      // Buat variabel db dapat diakses secara global oleh fungsi script lain (opsional)
-      window.db = db;
+    // Ekspos variabel & fungsi ke global scope
+    window.db = db;
+    window.collection = collection;
+    window.addDoc = addDoc;
+    window.getDocs = getDocs;
+    window.onSnapshot = onSnapshot;
+    window.deleteDoc = deleteDoc;
+    window.doc = doc;
     </script>
 </body>
 </html>

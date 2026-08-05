@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS & Dashboard - Pangkas Rambut Nias Sumut</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- SheetJS for Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <!-- jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brandRed: {
+                            500: '#dc2626',
+                            600: '#b91c1c',
+                            700: '#991b1b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        [x-cloak] { display: none !important; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+
+        @media print {
+            body * { visibility: hidden; }
+            #receiptPrintArea, #receiptPrintArea * { visibility: visible; }
+            #receiptPrintArea {
+                position: absolute; left: 0; top: 0; width: 100%; color: #000 !important; background: #fff !important; font-family: monospace;
+            }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body x-data="barberApp()" class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col transition-colors duration-200">
+
+    <!-- TOP NAVIGATION BAR -->
+    <header class="bg-slate-900 border-b border-red-600/30 text-white sticky top-0 z-40 shadow-xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-red-600 rounded-lg">
+                    <i class="fa-solid fa-scissors text-xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="font-black text-lg tracking-wide uppercase leading-none text-white">PANGKAS RAMBUT NIAS SUMUT</h1>
+                    <p class="text-[10px] text-red-500 font-semibold tracking-wider uppercase">Pangkas Rambut Waruwu</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3 sm:space-x-4">
+                <div class="hidden md:flex items-center px-3 py-1 rounded-full text-xs font-semibold"
+                     :class="storeIsOpen ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'">
+                    <span class="w-2 h-2 rounded-full mr-2" :class="storeIsOpen ? 'bg-emerald-400 animate-pulse' : 'bg-red-500'"></span>
+                    <span x-text="storeIsOpen ? 'BUKA (' + timerString + ')' : 'TOKO TUTUP'"></span>
+                </div>
+
+                <div class="hidden lg:flex items-center bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-700">
+                    <i class="fa-solid fa-bullseye text-blue-400 mr-2"></i>
+                    <span>Target: <strong class="text-white" x-text="formatRupiah(getIncomeByPeriod('today'))"></strong> / <span class="text-slate-400" x-text="formatRupiah(dailyTarget)"></span></span>
+                </div>
+
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" class="flex items-center space-x-2 bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-lg transition text-sm font-semibold">
+                        <i class="fa-solid fa-user-shield"></i>
+                        <span class="hidden sm:inline" x-text="currentUser">Admin</span>
+                        <i class="fa-solid fa-chevron-down text-xs"></i>
+                    </button>
+                    <div x-show="open" @click.outside="open = false" x-cloak class="absolute right-0 mt-2 w-48 bg-slate-900 rounded-xl shadow-2xl border border-slate-800 py-1 text-slate-200 z-50">
+                        <a href="#" @click.prevent="activeTab = 'settings'; open = false" class="block px-4 py-2 text-sm hover:bg-slate-800"><i class="fa-solid fa-gear mr-2 text-slate-400"></i>Pengaturan</a>
+                        <a href="#" @click.prevent="backupData(); open = false" class="block px-4 py-2 text-sm hover:bg-slate-800"><i class="fa-solid fa-download mr-2 text-slate-400"></i>Backup Database</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- NAVIGATION TABS -->
+    <nav class="bg-slate-900 border-b border-slate-800 sticky top-16 z-30 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex space-x-2 overflow-x-auto py-2 scrollbar-none">
+                <button @click="activeTab = 'dashboard'" :class="activeTab === 'dashboard' ? 'bg-red-600 text-white font-bold' : 'text-slate-400 hover:bg-slate-800 hover:text-white'" class="px-4 py-2 rounded-xl text-sm flex items-center space-x-2 whitespace-nowrap transition">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button @click="activeTab = 'pos'" :class="activeTab === 'pos' ? 'bg-red-600 text-white font-bold' : 'text-slate-400 hover:bg-slate-800 hover:text-white'" class="px-4 py-2 rounded-xl text-sm flex items-center space-x-2 whitespace-nowrap transition">
+                    <i class="fa-solid fa-cash-register"></i>
+                    <span>Kasir / Tambah Pelanggan</span>
+                </button>
+                <button @click="activeTab = 'expenses'" :class="activeTab === 'expenses' ? 'bg-red-600 text-white font-bold' : 'text-slate-400 hover:bg-slate-800 hover:text-white'" class="px-4 py-2 rounded-xl text-sm flex items-center space-x-2 whitespace-nowrap transition">
+                    <i class="fa-solid fa-wallet"></i>
+                    <span>Pengeluaran</span>
+                </button>
+                <button @click="activeTab = 'history'" :class="activeTab === 'history' ? 'bg-red-600 text-white font-bold' : 'text-slate-400 hover:bg-slate-800 hover:text-white'" class="px-4 py-2 rounded-xl text-sm flex items-center space-x-2 whitespace-nowrap transition">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>Riwayat Transaksi</span>
+                </button>
+                <button @click="activeTab = 'reports'" :class="activeTab === 'reports' ? 'bg-red-600 text-white font-bold' : 'text-slate-400 hover:bg-slate-800 hover:text-white'" class="px-4 py-2 rounded-xl text-sm flex items-center space-x-2 whitespace-nowrap transition">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                    <span>Laporan & Ekspor</span>
+                </button>
+                <button @click="activeTab = 'settings'" :class="activeTab === 'settings' ? 'bg-red-600 text-white font-bold' : 'text-slate-400 hover:bg-slate-800 hover:text-white'" class="px-4 py-2 rounded-xl text-sm flex items-center space-x-2 whitespace-nowrap transition">
+                    <i class="fa-solid fa-sliders"></i>
+                    <span>Pengaturan</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- ==================== TAB 1: DASHBOARD ==================== -->
+        <div x-show="activeTab === 'dashboard'" class="space-y-6">
+            
+            <!-- STORE STATUS BAR -->
+            <div class="bg-slate-900 rounded-2xl p-6 border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
+                <div class="flex items-center space-x-4">
+                    <div class="p-4 rounded-2xl" :class="storeIsOpen ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'">
+                        <i class="fa-solid" :class="storeIsOpen ? 'fa-door-open text-3xl' : 'fa-door-closed text-3xl'"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs uppercase font-bold tracking-wider text-slate-500">STATUS OPERASIONAL</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold"
+                                  :class="storeIsOpen ? 'bg-emerald-900/50 text-emerald-300' : 'bg-red-900/50 text-red-300'">
+                                <span x-text="storeIsOpen ? '🟢 TOKO BUKA' : '🔴 TOKO TUTUP'"></span>
+                            </span>
+                        </div>
+                        <h2 class="text-2xl font-black text-white mt-1" x-text="storeIsOpen ? 'Pangkas Rambut Sedang Beroperasi' : 'Toko Sedang Tutup'"></h2>
+                        <p class="text-xs text-slate-400">Jam Buka: <span class="text-slate-200 font-semibold" x-text="openTimeStr || '08:00 WIB'"></span> | Durasi: <strong class="text-blue-400" x-text="timerString"></strong></p>
+                    </div>
+                </div>
+                <button @click="toggleStoreStatus()" :class="storeIsOpen ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700'" class="w-full md:w-auto px-6 py-3 text-white font-bold rounded-xl shadow-lg transition flex items-center justify-center space-x-2">
+                    <i class="fa-solid" :class="storeIsOpen ? 'fa-power-off' : 'fa-play'"></i>
+                    <span x-text="storeIsOpen ? 'TUTUP TOKO' : 'BUKA TOKO'"></span>
+                </button>
+            </div>
+
+            <!-- REKAP PENDAPATAN DENGAN OPSI / FILTER DROPDOWN -->
+            <div class="bg-slate-900 rounded-2xl p-6 border border-red-900/40 shadow-xl">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-3 bg-red-600/20 text-red-500 rounded-xl">
+                            <i class="fa-solid fa-coins text-xl"></i>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">REKAP PENDAPATAN</span>
+                            <h3 class="text-3xl font-black text-emerald-400 mt-1" x-text="formatRupiah(getIncomeByPeriod(selectedIncomeFilter))">Rp 0</h3>
+                        </div>
+                    </div>
+
+                    <!-- Dropdown Opsi Filter Periode -->
+                    <div class="flex items-center space-x-2">
+                        <label class="text-xs text-slate-400 font-semibold hidden md:inline">Periode:</label>
+                        <select x-model="selectedIncomeFilter" class="px-4 py-2.5 rounded-xl bg-slate-800 text-white font-bold text-sm border border-slate-700 focus:ring-2 focus:ring-red-500 outline-none transition cursor-pointer">
+                            <option value="today">Hari Ini</option>
+                            <option value="week">1 Minggu Terakhir (7 Hari)</option>
+                            <option value="month">1 Bulan Terakhir (30 Hari)</option>
+                            <option value="year">1 Tahun Terakhir</option>
+                            <option value="all">Semua Pendapatan</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- METRIK FINANSIAL AUTOMATIS -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Pelanggan Hari Ini -->
+                <div class="bg-slate-900 rounded-2xl p-5 border border-slate-800 shadow-md">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">PELANGGAN HARI INI</p>
+                            <h3 class="text-3xl font-black text-white mt-2" x-text="getTodayCustomerCount() + ' Org'">0 Org</h3>
+                            <p class="text-[10px] text-emerald-400 font-semibold mt-1"><i class="fa-solid fa-rotate"></i> Real-time Otomatis</p>
+                        </div>
+                        <div class="p-3 bg-red-600/20 text-red-500 rounded-xl">
+                            <i class="fa-solid fa-users text-lg"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pendapatan Bersih Hari Ini (Pendapatan / 2) -->
+                <div class="bg-slate-900 rounded-2xl p-5 border border-blue-500/30 shadow-md relative overflow-hidden">
+                    <div class="absolute top-0 right-0 bg-blue-600 text-[9px] font-bold px-2 py-0.5 rounded-bl">50% BAGI HASIL</div>
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-[11px] font-bold text-blue-400 uppercase tracking-wider">PENDAPATAN BERSIH HARI INI</p>
+                            <h3 class="text-2xl font-black text-blue-400 mt-2" x-text="formatRupiah(getIncomeByPeriod('today') / 2)">Rp 0</h3>
+                            <p class="text-[10px] text-slate-400 mt-1">Hasil: (Pendapatan Hari ini ÷ 2)</p>
+                        </div>
+                        <div class="p-3 bg-blue-500/20 text-blue-400 rounded-xl">
+                            <i class="fa-solid fa-calculator text-lg"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pengeluaran Hari Ini -->
+                <div class="bg-slate-900 rounded-2xl p-5 border border-slate-800 shadow-md">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">PENGELUARAN HARI INI</p>
+                            <h3 class="text-2xl font-black text-red-400 mt-2" x-text="formatRupiah(getTodayExpenses())">Rp 0</h3>
+                            <p class="text-[10px] text-slate-400 mt-1">Bulan Ini: <strong class="text-slate-200" x-text="formatRupiah(getMonthExpenses())"></strong></p>
+                        </div>
+                        <div class="p-3 bg-red-500/20 text-red-400 rounded-xl">
+                            <i class="fa-solid fa-receipt text-lg"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Laba Bersih Hari Ini -->
+                <div class="bg-slate-900 rounded-2xl p-5 border border-slate-800 shadow-md">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">LABA BERSIH HARI INI</p>
+                            <h3 class="text-2xl font-black text-sky-400 mt-2" x-text="formatRupiah(getIncomeByPeriod('today') - getTodayExpenses())">Rp 0</h3>
+                            <p class="text-[10px] text-slate-400 mt-1">Bulan Ini: <strong class="text-slate-200" x-text="formatRupiah(getIncomeByPeriod('month') - getMonthExpenses())"></strong></p>
+                        </div>
+                        <div class="p-3 bg-sky-500/20 text-sky-400 rounded-xl">
+                            <i class="fa-solid fa-piggy-bank text-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RINCIAN BREAKDOWN PELANGGAN HARI INI & MENU CEPAT -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Breakdown Pelanggan -->
+                <div class="bg-slate-900 rounded-2xl p-6 border border-slate-800 shadow-md">
+                    <h3 class="text-sm font-bold text-white mb-4 flex items-center justify-between border-b border-slate-800 pb-3">
+                        <span>RINCIAN PELANGGAN HARI INI</span>
+                        <i class="fa-solid fa-users text-red-500"></i>
+                    </h3>
+                    <div class="space-y-2.5 text-sm">
+                        <div class="flex items-center justify-between p-3 bg-slate-800/60 rounded-xl">
+                            <span class="font-medium">👦 Anak-anak</span>
+                            <span class="font-bold text-red-400" x-text="getTodayBreakdown().anak + ' Orang'"></span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-slate-800/60 rounded-xl">
+                            <span class="font-medium">👨 Dewasa</span>
+                            <span class="font-bold text-red-400" x-text="getTodayBreakdown().dewasa + ' Orang'"></span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-slate-800/60 rounded-xl">
+                            <span class="font-medium">💆 Pijat</span>
+                            <span class="font-bold text-blue-400" x-text="getTodayBreakdown().pijat + ' Orang'"></span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-slate-800/60 rounded-xl">
+                            <span class="font-medium">🚿 Keramas</span>
+                            <span class="font-bold text-blue-400" x-text="getTodayBreakdown().keramas + ' Orang'"></span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-slate-800/60 rounded-xl">
+                            <span class="font-medium">💆🚿 Pijat + Keramas</span>
+                            <span class="font-bold text-blue-400" x-text="getTodayBreakdown().pijatKeramas + ' Orang'"></span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-red-950/40 rounded-xl border border-red-800/50">
+                            <span class="font-bold text-red-200">🎨 Pewarnaan Dasar (Cat Rambut)</span>
+                            <span class="font-black text-red-400" x-text="getTodayBreakdown().catRambut + ' Orang'"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tombol Cepat Dashboard -->
+                <div class="lg:col-span-2 bg-slate-900 rounded-2xl p-6 border border-slate-800 shadow-md flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-sm font-bold text-white mb-4 border-b border-slate-800 pb-3">AKSI CEPAT OPERASIONAL</h3>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            <button @click="activeTab = 'pos'" class="p-4 bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-lg font-bold text-left flex flex-col justify-between transition hover:scale-[1.02]">
+                                <i class="fa-solid fa-plus-circle text-2xl mb-2"></i>
+                                <span>+ Tambah Pelanggan</span>
+                            </button>
+                            <button @click="activeTab = 'expenses'" class="p-4 bg-slate-800 hover:bg-slate-700 text-white rounded-xl shadow font-bold text-left flex flex-col justify-between transition hover:scale-[1.02]">
+                                <i class="fa-solid fa-wallet text-2xl mb-2 text-red-400"></i>
+                                <span>+ Catat Pengeluaran</span>
+                            </button>
+                            <button @click="activeTab = 'history'" class="p-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow font-bold text-left flex flex-col justify-between transition hover:scale-[1.02]">
+                                <i class="fa-solid fa-clock-rotate-left text-2xl mb-2"></i>
+                                <span>Lihat Transaksi</span>
+                            </button>
+                            <button @click="activeTab = 'reports'" class="p-4 bg-slate-800 hover:bg-slate-700 text-white rounded-xl shadow font-bold text-left flex flex-col justify-between transition hover:scale-[1.02]">
+                                <i class="fa-solid fa-file-invoice-dollar text-2xl mb-2 text-emerald-400"></i>
+                                <span>Laporan Keuangan</span>
+                            </button>
+                            <button @click="activeTab = 'settings'" class="p-4 bg-slate-800 hover:bg-slate-700 text-white rounded-xl shadow font-bold text-left flex flex-col justify-between transition hover:scale-[1.02]">
+                                <i class="fa-solid fa-gear text-2xl mb-2 text-slate-400"></i>
+                                <span>Pengaturan</span>
+                            </button>
+                            <button @click="toggleStoreStatus()" :class="storeIsOpen ? 'bg-slate-800 text-red-400 hover:bg-slate-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'" class="p-4 rounded-xl shadow font-bold text-left flex flex-col justify-between transition hover:scale-[1.02]">
+                                <i class="fa-solid fa-power-off text-2xl mb-2"></i>
+                                <span x-text="storeIsOpen ? 'Tutup Toko' : 'Buka Toko'"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Mini Chart -->
+                    <div class="mt-6 pt-4 border-t border-slate-800">
+                        <span class="text-xs font-bold text-slate-400 uppercase">TREN PENDAPATAN MINGGU INI</span>
+                        <div class="h-28 w-full mt-2">
+                            <canvas id="dashboardMiniChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 2: KASIR / POS ==================== -->
+        <div x-show="activeTab === 'pos'" class="max-w-4xl mx-auto">
+            <div class="bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 overflow-hidden">
+                <div class="bg-red-600 px-6 py-4 text-white flex justify-between items-center">
+                    <h2 class="text-base font-bold flex items-center space-x-2">
+                        <i class="fa-solid fa-cash-register"></i>
+                        <span>Kasir / Tambah Pelanggan Baru</span>
+                    </h2>
+                    <span class="text-xs bg-red-800/80 px-3 py-1 rounded-full font-mono" x-text="getCurrentDateTimeStr()"></span>
+                </div>
+
+                <div class="p-6 space-y-6">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Nama Pelanggan (Opsional)</label>
+                        <input type="text" x-model="posForm.customerName" placeholder="Contoh: Budi / Pelanggan 01" class="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-800 text-white focus:ring-2 focus:ring-red-500 outline-none transition text-sm">
+                    </div>
+
+                    <!-- Kategori Potong Rambut (Bisa Tanpa Potong) -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">1. Layanan Potong Rambut</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <label :class="posForm.category === 'Dewasa' ? 'border-red-500 bg-red-950/20 text-white' : 'border-slate-800 bg-slate-800/40 text-slate-300 hover:bg-slate-800'" class="border-2 rounded-xl p-3.5 flex items-center justify-between cursor-pointer transition">
+                                <div class="flex items-center space-x-2.5">
+                                    <input type="radio" name="category" value="Dewasa" x-model="posForm.category" class="text-red-600 focus:ring-red-500">
+                                    <span class="font-bold text-sm">👨 Dewasa</span>
+                                </div>
+                                <span class="font-black text-red-400 text-xs">Rp20k</span>
+                            </label>
+
+                            <label :class="posForm.category === 'Anak-anak' ? 'border-red-500 bg-red-950/20 text-white' : 'border-slate-800 bg-slate-800/40 text-slate-300 hover:bg-slate-800'" class="border-2 rounded-xl p-3.5 flex items-center justify-between cursor-pointer transition">
+                                <div class="flex items-center space-x-2.5">
+                                    <input type="radio" name="category" value="Anak-anak" x-model="posForm.category" class="text-red-600 focus:ring-red-500">
+                                    <span class="font-bold text-sm">👦 Anak-anak</span>
+                                </div>
+                                <span class="font-black text-red-400 text-xs">Rp15k</span>
+                            </label>
+
+                            <label :class="posForm.category === 'None' ? 'border-slate-500 bg-slate-800 text-white' : 'border-slate-800 bg-slate-800/40 text-slate-400 hover:bg-slate-800'" class="border-2 rounded-xl p-3.5 flex items-center justify-between cursor-pointer transition">
+                                <div class="flex items-center space-x-2.5">
+                                    <input type="radio" name="category" value="None" x-model="posForm.category" class="text-slate-500 focus:ring-slate-500">
+                                    <span class="font-bold text-xs">🚫 Tanpa Potong</span>
+                                </div>
+                                <span class="font-bold text-slate-500 text-xs">Rp0</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Opsi Layanan Tambahan (Pewarnaan / Pijat / Keramas Bebas Dicentang) -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">2. Layanan Tambahan / Mandiri (Bisa Dicentang Sendirian / Kombinasi)</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <!-- Opsi Cat Rambut Berdiri Sendiri / Fleksibel -->
+                            <label :class="posForm.hasCatRambut ? 'border-red-500 bg-red-950/20 text-white' : 'border-slate-800 bg-slate-800/40 text-slate-300 hover:bg-slate-800'" class="border-2 rounded-xl p-3.5 flex items-center justify-between cursor-pointer transition">
+                                <div class="flex items-center space-x-2.5">
+                                    <input type="checkbox" x-model="posForm.hasCatRambut" class="rounded text-red-600 focus:ring-red-500">
+                                    <div>
+                                        <span class="font-bold text-sm block">🎨 Pewarnaan Dasar</span>
+                                        <span class="text-[10px] text-slate-400">Cat Rambut</span>
+                                    </div>
+                                </div>
+                                <span class="font-bold text-xs text-red-400">+Rp30k</span>
+                            </label>
+
+                            <label :class="posForm.hasPijat ? 'border-blue-500 bg-blue-950/20 text-white' : 'border-slate-800 bg-slate-800/40 text-slate-300 hover:bg-slate-800'" class="border-2 rounded-xl p-3.5 flex items-center justify-between cursor-pointer transition">
+                                <div class="flex items-center space-x-2.5">
+                                    <input type="checkbox" x-model="posForm.hasPijat" class="rounded text-blue-600 focus:ring-blue-500">
+                                    <span class="font-bold text-sm">💆 Pijat</span>
+                                </div>
+                                <span class="font-bold text-xs text-blue-400">+Rp5k</span>
+                            </label>
+
+                            <label :class="posForm.hasKeramas ? 'border-blue-500 bg-blue-950/20 text-white' : 'border-slate-800 bg-slate-800/40 text-slate-300 hover:bg-slate-800'" class="border-2 rounded-xl p-3.5 flex items-center justify-between cursor-pointer transition">
+                                <div class="flex items-center space-x-2.5">
+                                    <input type="checkbox" x-model="posForm.hasKeramas" class="rounded text-blue-600 focus:ring-blue-500">
+                                    <span class="font-bold text-sm">🚿 Keramas</span>
+                                </div>
+                                <span class="font-bold text-xs text-blue-400">+Rp5k</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Nominal Uang Bayar (Rp)</label>
+                            <input type="number" x-model.number="posForm.payAmount" placeholder="Contoh: 100000" class="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-800 text-white font-mono text-lg font-bold focus:ring-2 focus:ring-red-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Kembalian</label>
+                            <div class="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 font-mono text-lg font-black text-emerald-400" x-text="formatRupiah(calculateChange())">
+                                Rp 0
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-black text-slate-200 rounded-xl p-5 font-mono space-y-2 border border-slate-800">
+                        <div class="text-xs text-slate-500 border-b border-slate-800 pb-2 flex justify-between">
+                            <span>RINGKASAN STRUK</span>
+                            <span>PANGKAS RAMBUT NIAS SUMUT</span>
+                        </div>
+                        <template x-if="posForm.category !== 'None'">
+                            <div class="flex justify-between text-sm">
+                                <span x-text="posForm.category === 'Anak-anak' ? 'Pangkas Anak-anak' : 'Pangkas Dewasa'"></span>
+                                <span x-text="formatRupiah(prices[posForm.category])"></span>
+                            </div>
+                        </template>
+                        <template x-if="posForm.hasCatRambut">
+                            <div class="flex justify-between text-sm text-red-400">
+                                <span>Pewarnaan Dasar (Cat Rambut)</span>
+                                <span>Rp 50.000</span>
+                            </div>
+                        </template>
+                        <template x-if="posForm.hasPijat">
+                            <div class="flex justify-between text-sm text-blue-400">
+                                <span>Pijat</span>
+                                <span>Rp 10.000</span>
+                            </div>
+                        </template>
+                        <template x-if="posForm.hasKeramas">
+                            <div class="flex justify-between text-sm text-blue-400">
+                                <span>Keramas</span>
+                                <span>Rp 10.000</span>
+                            </div>
+                        </template>
+                        <div class="border-t border-dashed border-slate-800 pt-3 mt-2 flex justify-between items-center text-lg font-bold">
+                            <span class="text-red-500">TOTAL BAYAR</span>
+                            <span class="text-2xl text-emerald-400" x-text="formatRupiah(calculatePOSTotal())">Rp 0</span>
+                        </div>
+                    </div>
+
+                    <button @click="saveTransaction()" class="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-black text-base rounded-xl shadow-xl transition flex items-center justify-center space-x-2 uppercase tracking-wider">
+                        <i class="fa-solid fa-print"></i>
+                        <span>Simpan & Cetak Faktur</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 3: PENGELUARAN ==================== -->
+        <div x-show="activeTab === 'expenses'" class="space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-slate-900 rounded-2xl p-6 border border-slate-800 shadow-md h-fit">
+                    <h3 class="text-sm font-bold text-white mb-4 flex items-center space-x-2 border-b border-slate-800 pb-3">
+                        <i class="fa-solid fa-plus-circle text-red-500"></i>
+                        <span>Catat Pengeluaran Operasional</span>
+                    </h3>
+                    <form @submit.prevent="saveExpense()" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Tanggal</label>
+                            <input type="date" x-model="expenseForm.date" required class="w-full px-3 py-2 rounded-lg border border-slate-700 bg-slate-800 text-white focus:ring-2 focus:ring-red-500 outline-none text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Kategori</label>
+                            <select x-model="expenseForm.category" class="w-full px-3 py-2 rounded-lg border border-slate-700 bg-slate-800 text-white focus:ring-2 focus:ring-red-500 outline-none text-sm">
+                                <option value="Listrik">Listrik</option>
+                                <option value="Air">Air</option>
+                                <option value="Cat/Perlengkapan">Cat / Bahan Pewarna</option>
+                                <option value="Sabun/Shampoo">Sabun / Shampoo</option>
+                                <option value="Peralatan">Peralatan / Silet</option>
+                                <option value="Lain-lain">Lain-lain</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Keterangan Opsional</label>
+                            <input type="text" x-model="expenseForm.description" placeholder="Detail pengeluaran..." class="w-full px-3 py-2 rounded-lg border border-slate-700 bg-slate-800 text-white focus:ring-2 focus:ring-red-500 outline-none text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Nominal (Rp)</label>
+                            <input type="number" x-model.number="expenseForm.amount" min="1000" required placeholder="50000" class="w-full px-3 py-2 rounded-lg border border-slate-700 bg-slate-800 text-white focus:ring-2 focus:ring-red-500 outline-none text-sm">
+                        </div>
+                        <button type="submit" class="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow transition">
+                            Simpan Pengeluaran
+                        </button>
+                    </form>
+                </div>
+
+                <div class="lg:col-span-2 bg-slate-900 rounded-2xl p-6 border border-slate-800 shadow-md">
+                    <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
+                        <h3 class="text-sm font-bold text-white">Daftar Pengeluaran Operasional</h3>
+                        <span class="text-xs bg-red-950/60 text-red-400 border border-red-800/40 px-3 py-1 rounded-full font-bold">
+                            Total: <span x-text="formatRupiah(getTotalExpensesList())"></span>
+                        </span>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-slate-300">
+                            <thead class="text-xs text-slate-400 uppercase bg-slate-800/80">
+                                <tr>
+                                    <th class="px-4 py-3">Tanggal</th>
+                                    <th class="px-4 py-3">Kategori</th>
+                                    <th class="px-4 py-3">Keterangan</th>
+                                    <th class="px-4 py-3 text-right">Nominal</th>
+                                    <th class="px-4 py-3 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800">
+                                <template x-for="item in expenses" :key="item.id">
+                                    <tr class="hover:bg-slate-800/40">
+                                        <td class="px-4 py-3 font-medium whitespace-nowrap" x-text="formatDateStr(item.date)"></td>
+                                        <td class="px-4 py-3"><span class="bg-slate-800 border border-slate-700 px-2 py-0.5 rounded text-xs" x-text="item.category"></span></td>
+                                        <td class="px-4 py-3" x-text="item.description || '-'"></td>
+                                        <td class="px-4 py-3 text-right font-bold text-red-400" x-text="formatRupiah(item.amount)"></td>
+                                        <td class="px-4 py-3 text-center">
+                                            <button @click="deleteExpense(item.id)" class="text-red-500 hover:text-red-400 p-1">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+                                <template x-if="expenses.length === 0">
+                                    <tr>
+                                        <td colspan="5" class="text-center py-6 text-slate-500">Belum ada catatan pengeluaran.</td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 4: RIWAYAT TRANSAKSI ==================== -->
+        <div x-show="activeTab === 'history'" class="space-y-4">
+            <div class="bg-slate-900 rounded-2xl p-6 border border-slate-800 shadow-md">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 border-b border-slate-800 pb-4">
+                    <h3 class="text-sm font-bold text-white">Riwayat Transaksi Pelanggan</h3>
+                    <div class="relative w-full sm:w-64">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-500 text-xs"></i>
+                        <input type="text" x-model="searchQuery" placeholder="Cari pelanggan / faktur..." class="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-slate-700 bg-slate-800 text-white outline-none focus:ring-2 focus:ring-red-500">
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-slate-300">
+                        <thead class="text-xs text-slate-400 uppercase bg-slate-800">
+                            <tr>
+                                <th class="px-4 py-3">No. Faktur</th>
+                                <th class="px-4 py-3">Jam / Tanggal</th>
+                                <th class="px-4 py-3">Pelanggan</th>
+                                <th class="px-4 py-3">Layanan</th>
+                                <th class="px-4 py-3 text-right">Total</th>
+                                <th class="px-4 py-3 text-center">Cetak Faktur</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800">
+                            <template x-for="item in filteredTransactions" :key="item.id">
+                                <tr class="hover:bg-slate-800/40">
+                                    <td class="px-4 py-3 font-mono text-xs text-red-400 font-bold" x-text="item.invoiceNo"></td>
+                                    <td class="px-4 py-3 font-mono text-xs" x-text="formatDateTimeFull(item.timestamp)"></td>
+                                    <td class="px-4 py-3 font-semibold text-white" x-text="item.customerName || 'Pelanggan Umum'"></td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex flex-wrap gap-1 text-xs">
+                                            <template x-if="item.category !== 'None'">
+                                                <span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded" x-text="item.category"></span>
+                                            </template>
+                                            <template x-if="item.hasCatRambut"><span class="bg-red-950 text-red-300 px-2 py-0.5 rounded">Cat Rambut</span></template>
+                                            <template x-if="item.hasPijat"><span class="bg-blue-950 text-blue-300 px-2 py-0.5 rounded">+ Pijat</span></template>
+                                            <template x-if="item.hasKeramas"><span class="bg-blue-950 text-blue-300 px-2 py-0.5 rounded">+ Keramas</span></template>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3 text-right font-black text-emerald-400" x-text="formatRupiah(item.total)"></td>
+                                    <td class="px-4 py-3 text-center space-x-2">
+                                        <button @click="openReceiptModal(item)" class="bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white px-3 py-1 rounded-lg text-xs font-semibold transition">
+                                            <i class="fa-solid fa-print mr-1"></i> Faktur
+                                        </button>
+                                        <button @click="deleteTransaction(item.id)" class="text-slate-500 hover:text-red-500 p-1">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                            <template x-if="filteredTransactions.length === 0">
+                                <tr>
+                                    <td colspan="6" class="text-center py-8 text-slate-500">Tidak ada riwayat transaksi.</td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 5: LAPORAN & EKSPOR ==================== -->
+        <div x-show="activeTab === 'reports'" class="space-y-6">
+            <div class="bg-slate-900 rounded-2xl p-6 border border-slate-800 shadow-md flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center space-x-3">
+                    <span class="text-sm font-bold text-slate-300">Periode Laporan:</span>
+                    <select x-model="reportPeriod" class="px-3 py-2 rounded-xl border border-slate-700 bg-slate-800 text-white text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500">
+                        <option value="today">Hari Ini</option>
+                        <option value="month">Bulan Ini</option>
+                        <option value="all">Semua Data</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center space-x-3 w-full md:w-auto">
+                    <button @click="exportToPDF()" class="flex-1 md:flex-none px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm shadow transition flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        <span>Ekspor PDF</span>
+                    </button>
+                    <button @click="exportToExcel()" class="flex-1 md:flex-none px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm shadow transition flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-file-excel"></i>
+                        <span>Ekspor Excel</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                    <h4 class="font-bold text-white mb-4">Grafik Omzet & Laba</h4>
+                    <div class="h-64">
+                        <canvas id="incomeChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                    <h4 class="font-bold text-white mb-4">Persentase Proporsi Layanan (%)</h4>
+                    <div class="h-64 flex justify-center items-center">
+                        <canvas id="customerPieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 6: PENGATURAN ==================== -->
+        <div x-show="activeTab === 'settings'" class="max-w-3xl mx-auto space-y-6">
+            <div class="bg-slate-900 rounded-2xl p-6 border border-slate-800 shadow-md space-y-6">
+                <h3 class="text-base font-bold text-white border-b border-slate-800 pb-3">Pengaturan Sistem</h3>
+                
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Target Omzet Harian (Rp)</label>
+                    <input type="number" x-model.number="dailyTarget" class="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white focus:ring-2 focus:ring-red-500 outline-none font-mono">
+                </div>
+
+                <div class="pt-4 border-t border-slate-800 space-y-3">
+                    <h4 class="font-bold text-sm text-white">Cadangkan & Pemulihan Data (Backup JSON)</h4>
+                    <div class="flex flex-wrap gap-3">
+                        <button @click="backupData()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition">
+                            <i class="fa-solid fa-download mr-1.5"></i>Download Backup DB
+                        </button>
+                        <label class="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white rounded-xl text-xs font-bold transition cursor-pointer">
+                            <i class="fa-solid fa-upload mr-1.5"></i>Restore Database
+                            <input type="file" @change="restoreData($event)" accept=".json" class="hidden">
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL RECEIPT / STRUK FAKTUR CETAK -->
+    <div x-show="showReceiptModal" x-cloak class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+            <div id="receiptPrintArea" class="bg-white text-black p-4 font-mono text-xs leading-tight rounded">
+                <div class="text-center font-bold">
+                    <div>========================================</div>
+                    <div class="text-sm">PANGKAS RAMBUT NIAS SUMUT</div>
+                    <div>Pangkas Rambut Waruwu</div>
+                    <div>Jl. Sultan Badaruddin II, Susunan Baru,</div>
+                    <div>Kota Bandar Lampung</div>
+                    <div>========================================</div>
+                </div>
+                
+                <template x-if="selectedReceipt">
+                    <div>
+                        <div class="flex justify-between my-1">
+                            <span>Tgl : <span x-text="formatDateShort(selectedReceipt.timestamp)"></span></span>
+                            <span x-text="formatTimeOnly(selectedReceipt.timestamp)"></span>
+                        </div>
+                        <div class="mb-1">
+                            <span>No  : </span><span x-text="selectedReceipt.invoiceNo"></span>
+                        </div>
+                        <div>----------------------------------------</div>
+                        <div class="flex justify-between font-bold">
+                            <span>Item</span>
+                            <div class="space-x-4">
+                                <span>Qty</span>
+                                <span>Harga</span>
+                            </div>
+                        </div>
+                        <div>----------------------------------------</div>
+                        
+                        <div class="space-y-1 my-1">
+                            <template x-if="selectedReceipt.category !== 'None'">
+                                <div class="flex justify-between">
+                                    <span x-text="selectedReceipt.category === 'Anak-anak' ? 'Pangkas Anak' : 'Pangkas Dewasa'"></span>
+                                    <div class="space-x-6">
+                                        <span>1</span>
+                                        <span x-text="formatNum(prices[selectedReceipt.category])"></span>
+                                    </div>
+                                </div>
+                            </template>
+                            <template x-if="selectedReceipt.hasCatRambut">
+                                <div class="flex justify-between">
+                                    <span>Pewarnaan Dasar</span>
+                                    <div class="space-x-6">
+                                        <span>1</span>
+                                        <span>50.000</span>
+                                    </div>
+                                </div>
+                            </template>
+                            <template x-if="selectedReceipt.hasPijat">
+                                <div class="flex justify-between">
+                                    <span>Pijat Tambahan</span>
+                                    <div class="space-x-6">
+                                        <span>1</span>
+                                        <span>10.000</span>
+                                    </div>
+                                </div>
+                            </template>
+                            <template x-if="selectedReceipt.hasKeramas">
+                                <div class="flex justify-between">
+                                    <span>Keramas</span>
+                                    <div class="space-x-6">
+                                        <span>1</span>
+                                        <span>10.000</span>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        
+                        <div>----------------------------------------</div>
+                        <div class="flex justify-between font-bold">
+                            <span>TOTAL</span>
+                            <span x-text="formatNum(selectedReceipt.total)"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>BAYAR</span>
+                            <span x-text="formatNum(selectedReceipt.payAmount || selectedReceipt.total)"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>KEMBALI</span>
+                            <span x-text="formatNum((selectedReceipt.payAmount || selectedReceipt.total) - selectedReceipt.total)"></span>
+                        </div>
+                        <div>========================================</div>
+                        <div class="text-center font-bold mt-2">
+                            <div>Terima kasih atas kunjungan Anda!</div>
+                            <div>Rambut Rapi, Tampil Penuh Gaya</div>
+                        </div>
+                        <div class="text-center">========================================</div>
+                    </div>
+                </template>
+            </div>
+
+            <div class="flex space-x-2 pt-2 no-print">
+                <button @click="printReceipt()" class="flex-1 py-2.5 bg-red-600 text-white rounded-xl font-bold text-xs hover:bg-red-700 shadow-lg">
+                    <i class="fa-solid fa-print mr-1"></i> Cetak Faktur
+                </button>
+                <button @click="showReceiptModal = false" class="py-2.5 px-4 bg-slate-800 text-slate-300 rounded-xl font-bold text-xs hover:bg-slate-700">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGIKA JAVASCRIPT APP -->
+    <script>
+        function barberApp() {
+            return {
+                activeTab: 'dashboard',
+                currentUser: 'Admin Waruwu',
+                storeIsOpen: localStorage.getItem('barber_store_open') === 'true',
+                openTimeStr: localStorage.getItem('barber_open_time') || '',
+                timerSeconds: parseInt(localStorage.getItem('barber_timer_sec') || '0'),
+                timerInterval: null,
+                timerString: '00:00:00',
+                dailyTarget: parseInt(localStorage.getItem('barber_target') || '500000'),
+                searchQuery: '',
+                showReceiptModal: false,
+                selectedReceipt: null,
+                reportPeriod: 'today',
+                selectedIncomeFilter: 'today',
+
+                prices: {
+                    'Anak-anak': 15000,
+                    'Dewasa': 20000,
+                    'None': 0,
+                    'Pijat': 5000,
+                    'Keramas': 5000,
+                    'CatRambut': 30000
+                },
+
+                posForm: {
+                    customerName: '',
+                    category: 'Dewasa',
+                    hasPijat: false,
+                    hasKeramas: false,
+                    hasCatRambut: false,
+                    payAmount: ''
+                },
+
+                expenseForm: {
+                    date: new Date().toISOString().split('T')[0],
+                    category: 'Listrik',
+                    description: '',
+                    amount: ''
+                },
+
+                transactions: JSON.parse(localStorage.getItem('barber_transactions') || '[]'),
+                expenses: JSON.parse(localStorage.getItem('barber_expenses') || '[]'),
+
+                init() {
+                    if (this.storeIsOpen) this.startTimer();
+                    this.updateTimerStr();
+
+                    if (this.transactions.length === 0) {
+                        this.seedDemoData();
+                    }
+
+                    this.$watch('activeTab', (tab) => {
+                        if (tab === 'reports' || tab === 'dashboard') {
+                            this.$nextTick(() => { this.renderCharts(); });
+                        }
+                    });
+
+                    this.$nextTick(() => { this.renderCharts(); });
+                },
+
+                toggleStoreStatus() {
+                    this.storeIsOpen = !this.storeIsOpen;
+                    localStorage.setItem('barber_store_open', this.storeIsOpen);
+                    
+                    if (this.storeIsOpen) {
+                        const now = new Date();
+                        this.openTimeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+                        localStorage.setItem('barber_open_time', this.openTimeStr);
+                        this.timerSeconds = 0;
+                        this.startTimer();
+                    } else {
+                        clearInterval(this.timerInterval);
+                        this.timerSeconds = 0;
+                        localStorage.setItem('barber_timer_sec', '0');
+                        this.updateTimerStr();
+                    }
+                },
+
+                startTimer() {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = setInterval(() => {
+                        this.timerSeconds++;
+                        localStorage.setItem('barber_timer_sec', this.timerSeconds.toString());
+                        this.updateTimerStr();
+                    }, 1000);
+                },
+
+                updateTimerStr() {
+                    const hrs = Math.floor(this.timerSeconds / 3600).toString().padStart(2, '0');
+                    const mins = Math.floor((this.timerSeconds % 3600) / 60).toString().padStart(2, '0');
+                    const secs = (this.timerSeconds % 60).toString().padStart(2, '0');
+                    this.timerString = `${hrs}:${mins}:${secs}`;
+                },
+
+                calculatePOSTotal() {
+                    let total = this.prices[this.posForm.category] || 0;
+                    if (this.posForm.hasPijat) total += this.prices['Pijat'];
+                    if (this.posForm.hasKeramas) total += this.prices['Keramas'];
+                    if (this.posForm.hasCatRambut) total += this.prices['CatRambut'];
+                    return total;
+                },
+
+                calculateChange() {
+                    const total = this.calculatePOSTotal();
+                    const pay = this.posForm.payAmount || 0;
+                    return pay >= total ? pay - total : 0;
+                },
+
+                generateInvoiceNumber() {
+                    const d = new Date();
+                    const yyyy = d.getFullYear();
+                    const mm = String(d.getMonth() + 1).padStart(2, '0');
+                    const dd = String(d.getDate()).padStart(2, '0');
+                    const todayPrefix = `PRN-${yyyy}${mm}${dd}`;
+                    
+                    const todayCount = this.transactions.filter(t => t.invoiceNo && t.invoiceNo.startsWith(todayPrefix)).length + 1;
+                    return `#${todayPrefix}${String(todayCount).padStart(2, '0')}`;
+                },
+
+                saveTransaction() {
+                    const total = this.calculatePOSTotal();
+                    const pay = this.posForm.payAmount || total;
+
+                    if (total === 0) {
+                        alert('Silakan pilih minimal 1 jenis layanan terlebih dahulu!');
+                        return;
+                    }
+
+                    if (pay < total) {
+                        alert('Nominal uang bayar kurang dari total tagihan!');
+                        return;
+                    }
+
+                    const newTx = {
+                        id: Date.now(),
+                        invoiceNo: this.generateInvoiceNumber(),
+                        customerName: this.posForm.customerName.trim(),
+                        category: this.posForm.category,
+                        hasPijat: this.posForm.hasPijat,
+                        hasKeramas: this.posForm.hasKeramas,
+                        hasCatRambut: this.posForm.hasCatRambut,
+                        total: total,
+                        payAmount: pay,
+                        timestamp: new Date().toISOString()
+                    };
+
+                    this.transactions.unshift(newTx);
+                    localStorage.setItem('barber_transactions', JSON.stringify(this.transactions));
+
+                    this.openReceiptModal(newTx);
+
+                    this.posForm.customerName = '';
+                    this.posForm.category = 'Dewasa';
+                    this.posForm.hasPijat = false;
+                    this.posForm.hasKeramas = false;
+                    this.posForm.hasCatRambut = false;
+                    this.posForm.payAmount = '';
+                },
+
+                deleteTransaction(id) {
+                    if (confirm('Yakin ingin menghapus riwayat transaksi ini?')) {
+                        this.transactions = this.transactions.filter(t => t.id !== id);
+                        localStorage.setItem('barber_transactions', JSON.stringify(this.transactions));
+                    }
+                },
+
+                saveExpense() {
+                    const newExp = {
+                        id: Date.now(),
+                        date: this.expenseForm.date,
+                        category: this.expenseForm.category,
+                        description: this.expenseForm.description,
+                        amount: this.expenseForm.amount
+                    };
+
+                    this.expenses.unshift(newExp);
+                    localStorage.setItem('barber_expenses', JSON.stringify(this.expenses));
+
+                    this.expenseForm.description = '';
+                    this.expenseForm.amount = '';
+                    alert('Pengeluaran berhasil dicatat!');
+                },
+
+                deleteExpense(id) {
+                    if (confirm('Hapus pengeluaran ini?')) {
+                        this.expenses = this.expenses.filter(e => e.id !== id);
+                        localStorage.setItem('barber_expenses', JSON.stringify(this.expenses));
+                    }
+                },
+
+                get filteredTransactions() {
+                    if (!this.searchQuery) return this.transactions;
+                    const q = this.searchQuery.toLowerCase();
+                    return this.transactions.filter(t => 
+                        (t.customerName && t.customerName.toLowerCase().includes(q)) ||
+                        (t.invoiceNo && t.invoiceNo.toLowerCase().includes(q)) ||
+                        t.category.toLowerCase().includes(q)
+                    );
+                },
+
+                getIncomeByPeriod(period) {
+                    const now = new Date();
+                    
+                    return this.transactions.reduce((sum, t) => {
+                        const txDate = new Date(t.timestamp);
+                        let isMatch = false;
+
+                        if (period === 'today') {
+                            isMatch = txDate.toDateString() === now.toDateString();
+                        } else if (period === 'week') {
+                            const diffTime = Math.abs(now - txDate);
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                            isMatch = diffDays <= 7;
+                        } else if (period === 'month') {
+                            const diffTime = Math.abs(now - txDate);
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                            isMatch = diffDays <= 30;
+                        } else if (period === 'year') {
+                            const diffTime = Math.abs(now - txDate);
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                            isMatch = diffDays <= 365;
+                        } else if (period === 'all') {
+                            isMatch = true;
+                        }
+
+                        return isMatch ? sum + t.total : sum;
+                    }, 0);
+                },
+
+                getTodayExpenses() {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    return this.expenses
+                        .filter(e => e.date === todayStr)
+                        .reduce((sum, e) => sum + e.amount, 0);
+                },
+
+                getMonthExpenses() {
+                    const monthStr = new Date().toISOString().slice(0, 7);
+                    return this.expenses
+                        .filter(e => e.date.startsWith(monthStr))
+                        .reduce((sum, e) => sum + e.amount, 0);
+                },
+
+                getTodayCustomerCount() {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    return this.transactions.filter(t => t.timestamp.startsWith(todayStr)).length;
+                },
+
+                getTodayBreakdown() {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    const todayTxs = this.transactions.filter(t => t.timestamp.startsWith(todayStr));
+                    
+                    let anak = 0, dewasa = 0, pijat = 0, keramas = 0, pijatKeramas = 0, catRambut = 0;
+                    todayTxs.forEach(t => {
+                        if (t.category === 'Anak-anak') anak++;
+                        if (t.category === 'Dewasa') dewasa++;
+                        if (t.hasPijat && !t.hasKeramas) pijat++;
+                        if (t.hasKeramas && !t.hasPijat) keramas++;
+                        if (t.hasPijat && t.hasKeramas) pijatKeramas++;
+                        if (t.hasCatRambut) catRambut++;
+                    });
+
+                    return { anak, dewasa, pijat, keramas, pijatKeramas, catRambut };
+                },
+
+                getTotalExpensesList() {
+                    return this.expenses.reduce((sum, e) => sum + e.amount, 0);
+                },
+
+                formatRupiah(num) {
+                    return 'Rp ' + (num || 0).toLocaleString('id-ID');
+                },
+
+                formatNum(num) {
+                    return (num || 0).toLocaleString('id-ID');
+                },
+
+                formatDateStr(dateStr) {
+                    if (!dateStr) return '';
+                    const d = new Date(dateStr);
+                    return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                },
+
+                formatDateShort(isoStr) {
+                    if (!isoStr) return '';
+                    const d = new Date(isoStr);
+                    const dd = String(d.getDate()).padStart(2, '0');
+                    const mm = String(d.getMonth() + 1).padStart(2, '0');
+                    const yyyy = d.getFullYear();
+                    return `${dd}/${mm}/${yyyy}`;
+                },
+
+                formatTimeOnly(isoStr) {
+                    if (!isoStr) return '';
+                    const d = new Date(isoStr);
+                    return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
+                },
+
+                formatDateTimeFull(isoStr) {
+                    if (!isoStr) return '';
+                    return `${this.formatDateShort(isoStr)} ${this.formatTimeOnly(isoStr)}`;
+                },
+
+                getCurrentDateTimeStr() {
+                    return new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                },
+
+                openReceiptModal(tx) {
+                    this.selectedReceipt = tx;
+                    this.showReceiptModal = true;
+                },
+
+                printReceipt() {
+                    window.print();
+                },
+
+                backupData() {
+                    const data = {
+                        transactions: this.transactions,
+                        expenses: this.expenses,
+                        dailyTarget: this.dailyTarget
+                    };
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `backup_nias_sumut_${new Date().toISOString().split('T')[0]}.json`;
+                    a.click();
+                },
+
+                restoreData(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const data = JSON.parse(e.target.result);
+                            if (data.transactions) this.transactions = data.transactions;
+                            if (data.expenses) this.expenses = data.expenses;
+                            localStorage.setItem('barber_transactions', JSON.stringify(this.transactions));
+                            localStorage.setItem('barber_expenses', JSON.stringify(this.expenses));
+                            alert('Database berhasil di-restore!');
+                            location.reload();
+                        } catch (err) {
+                            alert('File JSON backup tidak valid!');
+                        }
+                    };
+                    reader.readAsText(file);
+                },
+
+                exportToExcel() {
+                    const data = this.transactions.map(t => ({
+                        Faktur: t.invoiceNo,
+                        Tanggal: this.formatDateShort(t.timestamp),
+                        Jam: this.formatTimeOnly(t.timestamp),
+                        Pelanggan: t.customerName || 'Pelanggan Umum',
+                        Kategori: t.category,
+                        CatRambut: t.hasCatRambut ? 'Ya' : 'Tidak',
+                        Pijat: t.hasPijat ? 'Ya' : 'Tidak',
+                        Keramas: t.hasKeramas ? 'Ya' : 'Tidak',
+                        Total: t.total,
+                        Bayar: t.payAmount || t.total,
+                        Kembali: (t.payAmount || t.total) - t.total
+                    }));
+
+                    const ws = XLSX.utils.json_to_sheet(data);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, "Faktur Transaksi");
+                    XLSX.writeFile(wb, `Laporan_Pangkas_Nias_Sumut_${new Date().toISOString().split('T')[0]}.xlsx`);
+                },
+
+                exportToPDF() {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF();
+                    doc.text("Laporan Transaksi - PANGKAS RAMBUT NIAS SUMUT", 14, 15);
+                    
+                    const tableData = this.transactions.map(t => [
+                        t.invoiceNo,
+                        this.formatDateTimeFull(t.timestamp),
+                        t.customerName || 'Pelanggan Umum',
+                        t.category === 'None' ? 'Layanan Saja' : t.category,
+                        this.formatRupiah(t.total)
+                    ]);
+
+                    doc.autoTable({
+                        head: [['No. Faktur', 'Waktu', 'Pelanggan', 'Kategori', 'Total']],
+                        body: tableData,
+                        startY: 20
+                    });
+
+                    doc.save(`Laporan_Pangkas_Nias_Sumut_${new Date().toISOString().split('T')[0]}.pdf`);
+                },
+
+                renderCharts() {
+                    const miniCtx = document.getElementById('dashboardMiniChart');
+                    if (miniCtx) {
+                        new Chart(miniCtx, {
+                            type: 'line',
+                            data: {
+                                labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
+                                datasets: [{
+                                    data: [150000, 230000, 180000, 300000, 280000, 450000, 380000],
+                                    borderColor: '#dc2626',
+                                    backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                                    fill: true,
+                                    tension: 0.3
+                                }]
+                            },
+                            options: { plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false } } } }
+                        });
+                    }
+
+                    const incomeCtx = document.getElementById('incomeChart');
+                    if (incomeCtx) {
+                        new Chart(incomeCtx, {
+                            type: 'bar',
+                            data: {
+                                labels: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'],
+                                datasets: [{
+                                    label: 'Pendapatan (Rp)',
+                                    data: [150000, 230000, 180000, 300000, 280000, 450000, 380000],
+                                    backgroundColor: '#dc2626'
+                                }]
+                            },
+                            options: { responsive: true, maintainAspectRatio: false }
+                        });
+                    }
+
+                    const pieCtx = document.getElementById('customerPieChart');
+                    if (pieCtx) {
+                        new Chart(pieCtx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: ['Dewasa', 'Anak-anak', 'Cat Rambut', 'Pijat/Keramas'],
+                                datasets: [{
+                                    data: [50, 25, 15, 10],
+                                    backgroundColor: ['#dc2626', '#2563eb', '#9333ea', '#10b981']
+                                }]
+                            },
+                            options: { responsive: true, maintainAspectRatio: false }
+                        });
+                    }
+                },
+
+                seedDemoData() {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    this.transactions = [
+                        { id: 1, invoiceNo: '#PRN-2026080501', customerName: 'Pelanggan Cat Only', category: 'None', hasPijat: false, hasKeramas: false, hasCatRambut: true, total: 50000, payAmount: 50000, timestamp: todayStr + 'T16:46:00' },
+                        { id: 2, invoiceNo: '#PRN-2026080502', customerName: 'Budi', category: 'Dewasa', hasPijat: false, hasKeramas: true, hasCatRambut: true, total: 90000, payAmount: 100000, timestamp: todayStr + 'T17:10:00' }
+                    ];
+                    this.expenses = [
+                        { id: 101, date: todayStr, category: 'Listrik', description: 'Token Harian Toko', amount: 20000 }
+                    ];
+                    localStorage.setItem('barber_transactions', JSON.stringify(this.transactions));
+                    localStorage.setItem('barber_expenses', JSON.stringify(this.expenses));
+                }
+            }
+        }
+    </script>
+</body>
+</html>

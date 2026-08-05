@@ -167,7 +167,6 @@
                         </div>
                     </div>
 
-                    <!-- Dropdown Opsi Filter Periode -->
                     <div class="flex items-center space-x-2">
                         <label class="text-xs text-slate-400 font-semibold hidden md:inline">Periode:</label>
                         <select x-model="selectedIncomeFilter" class="px-4 py-2.5 rounded-xl bg-slate-800 text-white font-bold text-sm border border-slate-700 focus:ring-2 focus:ring-red-500 outline-none transition cursor-pointer">
@@ -183,7 +182,6 @@
 
             <!-- METRIK FINANSIAL AUTOMATIS -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <!-- Pelanggan Hari Ini -->
                 <div class="bg-slate-900 rounded-2xl p-5 border border-slate-800 shadow-md">
                     <div class="flex justify-between items-start">
                         <div>
@@ -197,7 +195,6 @@
                     </div>
                 </div>
 
-                <!-- Pendapatan Bersih Hari Ini (Pendapatan / 2) -->
                 <div class="bg-slate-900 rounded-2xl p-5 border border-blue-500/30 shadow-md relative overflow-hidden">
                     <div class="absolute top-0 right-0 bg-blue-600 text-[9px] font-bold px-2 py-0.5 rounded-bl">50% BAGI HASIL</div>
                     <div class="flex justify-between items-start">
@@ -212,7 +209,6 @@
                     </div>
                 </div>
 
-                <!-- Pengeluaran Hari Ini -->
                 <div class="bg-slate-900 rounded-2xl p-5 border border-slate-800 shadow-md">
                     <div class="flex justify-between items-start">
                         <div>
@@ -226,7 +222,6 @@
                     </div>
                 </div>
 
-                <!-- Laba Bersih Hari Ini -->
                 <div class="bg-slate-900 rounded-2xl p-5 border border-slate-800 shadow-md">
                     <div class="flex justify-between items-start">
                         <div>
@@ -243,7 +238,6 @@
 
             <!-- RINCIAN BREAKDOWN PELANGGAN HARI INI & MENU CEPAT -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Breakdown Pelanggan -->
                 <div class="bg-slate-900 rounded-2xl p-6 border border-slate-800 shadow-md">
                     <h3 class="text-sm font-bold text-white mb-4 flex items-center justify-between border-b border-slate-800 pb-3">
                         <span>RINCIAN PELANGGAN HARI INI</span>
@@ -277,7 +271,6 @@
                     </div>
                 </div>
 
-                <!-- Tombol Cepat Dashboard -->
                 <div class="lg:col-span-2 bg-slate-900 rounded-2xl p-6 border border-slate-800 shadow-md flex flex-col justify-between">
                     <div>
                         <h3 class="text-sm font-bold text-white mb-4 border-b border-slate-800 pb-3">AKSI CEPAT OPERASIONAL</h3>
@@ -309,7 +302,6 @@
                         </div>
                     </div>
 
-                    <!-- Mini Chart -->
                     <div class="mt-6 pt-4 border-t border-slate-800">
                         <span class="text-xs font-bold text-slate-400 uppercase">TREN PENDAPATAN MINGGU INI</span>
                         <div class="h-28 w-full mt-2">
@@ -337,7 +329,6 @@
                         <input type="text" x-model="posForm.customerName" placeholder="Contoh: Budi / Pelanggan 01" class="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-800 text-white focus:ring-2 focus:ring-red-500 outline-none transition text-sm">
                     </div>
 
-                    <!-- Kategori Potong Rambut (Bisa Tanpa Potong) -->
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">1. Layanan Potong Rambut</label>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -367,11 +358,9 @@
                         </div>
                     </div>
 
-                    <!-- Opsi Layanan Tambahan (Pewarnaan / Pijat / Keramas Bebas Dicentang) -->
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">2. Layanan Tambahan / Mandiri (Bisa Dicentang Sendirian / Kombinasi)</label>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">2. Layanan Tambahan / Mandiri</label>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <!-- Opsi Cat Rambut Berdiri Sendiri / Fleksibel -->
                             <label :class="posForm.hasCatRambut ? 'border-red-500 bg-red-950/20 text-white' : 'border-slate-800 bg-slate-800/40 text-slate-300 hover:bg-slate-800'" class="border-2 rounded-xl p-3.5 flex items-center justify-between cursor-pointer transition">
                                 <div class="flex items-center space-x-2.5">
                                     <input type="checkbox" x-model="posForm.hasCatRambut" class="rounded text-red-600 focus:ring-red-500">
@@ -404,7 +393,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Nominal Uang Bayar (Rp)</label>
-                            <input type="number" x-model.number="posForm.payAmount" placeholder="Contoh: 100000" class="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-800 text-white font-mono text-lg font-bold focus:ring-2 focus:ring-red-500 outline-none">
+                            <input type="number" x-model.number="posForm.payAmount" placeholder="Contoh: 50000" class="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-800 text-white font-mono text-lg font-bold focus:ring-2 focus:ring-red-500 outline-none">
                         </div>
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Kembalian</label>
@@ -428,19 +417,19 @@
                         <template x-if="posForm.hasCatRambut">
                             <div class="flex justify-between text-sm text-red-400">
                                 <span>Pewarnaan Dasar (Cat Rambut)</span>
-                                <span>Rp 50.000</span>
+                                <span>Rp 30.000</span>
                             </div>
                         </template>
                         <template x-if="posForm.hasPijat">
                             <div class="flex justify-between text-sm text-blue-400">
                                 <span>Pijat</span>
-                                <span>Rp 10.000</span>
+                                <span>Rp 5.000</span>
                             </div>
                         </template>
                         <template x-if="posForm.hasKeramas">
                             <div class="flex justify-between text-sm text-blue-400">
                                 <span>Keramas</span>
-                                <span>Rp 10.000</span>
+                                <span>Rp 5.000</span>
                             </div>
                         </template>
                         <div class="border-t border-dashed border-slate-800 pt-3 mt-2 flex justify-between items-center text-lg font-bold">
@@ -716,7 +705,7 @@
                                     <span>Pewarnaan Dasar</span>
                                     <div class="space-x-6">
                                         <span>1</span>
-                                        <span>50.000</span>
+                                        <span>30.000</span>
                                     </div>
                                 </div>
                             </template>
@@ -725,7 +714,7 @@
                                     <span>Pijat Tambahan</span>
                                     <div class="space-x-6">
                                         <span>1</span>
-                                        <span>10.000</span>
+                                        <span>5.000</span>
                                     </div>
                                 </div>
                             </template>
@@ -734,7 +723,7 @@
                                     <span>Keramas</span>
                                     <div class="space-x-6">
                                         <span>1</span>
-                                        <span>10.000</span>
+                                        <span>5.000</span>
                                     </div>
                                 </div>
                             </template>
@@ -772,8 +761,26 @@
         </div>
     </div>
 
-    <!-- LOGIKA JAVASCRIPT APP -->
+    <!-- LOGIKA FIREBASE + ALPINE JAVASCRIPT -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDLYxgQwQgLcHEWdnv3XIvEmCrEfIhqTWw",
+            authDomain: "pangkas-rambut-nias.firebaseapp.com",
+            projectId: "pangkas-rambut-nias",
+            storageBucket: "pangkas-rambut-nias.firebasestorage.app",
+            messagingSenderId: "1059679701423",
+            appId: "1:1059679701423:web:1e0d33bc5c35e3c0d0875a"
+        };
+
+        const app = initializeApp(firebaseConfig);
+    </script>
+
     <script>
+        // Simpan instance chart secara global agar bisa di-destroy sebelum dirender ulang
+        let chartInstances = {};
+
         function barberApp() {
             return {
                 activeTab: 'dashboard',
@@ -790,6 +797,7 @@
                 reportPeriod: 'today',
                 selectedIncomeFilter: 'today',
 
+                // Disesuaikan persis dengan harga pada tampilan UI POS
                 prices: {
                     'Anak-anak': 15000,
                     'Dewasa': 20000,
@@ -1169,9 +1177,14 @@
                 },
 
                 renderCharts() {
+                    // Mencegah error Re-render Chart.js
+                    if (chartInstances['dashboardMiniChart']) chartInstances['dashboardMiniChart'].destroy();
+                    if (chartInstances['incomeChart']) chartInstances['incomeChart'].destroy();
+                    if (chartInstances['customerPieChart']) chartInstances['customerPieChart'].destroy();
+
                     const miniCtx = document.getElementById('dashboardMiniChart');
                     if (miniCtx) {
-                        new Chart(miniCtx, {
+                        chartInstances['dashboardMiniChart'] = new Chart(miniCtx, {
                             type: 'line',
                             data: {
                                 labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
@@ -1189,7 +1202,7 @@
 
                     const incomeCtx = document.getElementById('incomeChart');
                     if (incomeCtx) {
-                        new Chart(incomeCtx, {
+                        chartInstances['incomeChart'] = new Chart(incomeCtx, {
                             type: 'bar',
                             data: {
                                 labels: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'],
@@ -1205,7 +1218,7 @@
 
                     const pieCtx = document.getElementById('customerPieChart');
                     if (pieCtx) {
-                        new Chart(pieCtx, {
+                        chartInstances['customerPieChart'] = new Chart(pieCtx, {
                             type: 'doughnut',
                             data: {
                                 labels: ['Dewasa', 'Anak-anak', 'Cat Rambut', 'Pijat/Keramas'],
@@ -1222,8 +1235,8 @@
                 seedDemoData() {
                     const todayStr = new Date().toISOString().split('T')[0];
                     this.transactions = [
-                        { id: 1, invoiceNo: '#PRN-2026080501', customerName: 'Pelanggan Cat Only', category: 'None', hasPijat: false, hasKeramas: false, hasCatRambut: true, total: 50000, payAmount: 50000, timestamp: todayStr + 'T16:46:00' },
-                        { id: 2, invoiceNo: '#PRN-2026080502', customerName: 'Budi', category: 'Dewasa', hasPijat: false, hasKeramas: true, hasCatRambut: true, total: 90000, payAmount: 100000, timestamp: todayStr + 'T17:10:00' }
+                        { id: 1, invoiceNo: '#PRN-2026080501', customerName: 'Pelanggan Cat Only', category: 'None', hasPijat: false, hasKeramas: false, hasCatRambut: true, total: 30000, payAmount: 30000, timestamp: todayStr + 'T16:46:00' },
+                        { id: 2, invoiceNo: '#PRN-2026080502', customerName: 'Budi', category: 'Dewasa', hasPijat: false, hasKeramas: true, hasCatRambut: true, total: 55000, payAmount: 100000, timestamp: todayStr + 'T17:10:00' }
                     ];
                     this.expenses = [
                         { id: 101, date: todayStr, category: 'Listrik', description: 'Token Harian Toko', amount: 20000 }
@@ -1234,5 +1247,24 @@
             }
         }
     </script>
+    <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyDLYxgQwQgLcHEWdnv3XIvEmCrEfIhqTWw",
+    authDomain: "pangkas-rambut-nias.firebaseapp.com",
+    projectId: "pangkas-rambut-nias",
+    storageBucket: "pangkas-rambut-nias.firebasestorage.app",
+    messagingSenderId: "1059679701423",
+    appId: "1:1059679701423:web:1e0d33bc5c35e3c0d0875a"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+</script>
 </body>
 </html>

@@ -848,12 +848,21 @@
                     this.updateTimerStr();
 
                     // 1. DENGARKAN DATA TRANSAKSI REAL-TIME DARI FIRESTORE
-                    window.onSnapshot(window.collection(window.db, "transactions"), (snapshot) => {
+                    // Dengarkan koleksi "transaksi" (bukan "transactions")
+                    onSnapshot(collection(db, "transaksi"), (snapshot) => {
                         let txs = [];
                         snapshot.forEach((docSnap) => {
-                            txs.push({ firestoreId: docSnap.id, ...docSnap.data() });
+                            const data = docSnap.data();
+                            txs.push({ 
+                                firestoreId: docSnap.id, 
+                                ...data,
+                                // Pemetaan balik agar UI Alpine.js membaca variabel dengan benar
+                                invoiceNo: data.fakturNo || data.invoiceNo,
+                                category: data.kategori || data.category,
+                                payAmount: data.bayarJumlah || data.payAmount,
+                                timestamp: data["cap waktu"] || data.timestamp
+                            });
                         });
-                        // Urutkan dari yang paling baru
                         this.transactions = txs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
                         this.renderCharts();
                     });
@@ -937,31 +946,46 @@
 
                 // 3. SIMPAN TRANSAKSI KE FIRESTORE (KIRIM KE AWAN)
                 async saveTransaction() {
-                    const total = this.calculatePOSTotal();
-                    const pay = this.posForm.payAmount || total;
+                const total = this.calculatePOSTotal();
+                const pay = Number(this.posForm.payAmount) || total;
 
-                    if (total === 0) {
-                        alert('Silakan pilih minimal 1 jenis layanan terlebih dahulu!');
-                        return;
-                    }
+                if (total === 0) {
+                    alert('Silakan pilih minimal 1 jenis layanan terlebih dahulu!');
+                    return;
+                }
 
-                    if (pay < total) {
-                        alert('Nominal uang bayar kurang dari total tagihan!');
-                        return;
-                    }
+                if (pay < total) {
+                    alert('Nominal uang bayar kurang dari total tagihan!');
+                    return;
+                }
 
-                    const newTx = {
-                        id: Date.now(),
-                        invoiceNo: this.generateInvoiceNumber(),
-                        customerName: this.posForm.customerName.trim(),
-                        category: this.posForm.category,
-                        hasPijat: this.posForm.hasPijat,
-                        hasKeramas: this.posForm.hasKeramas,
-                        hasCatRambut: this.posForm.hasCatRambut,
-                        total: total,
-                        payAmount: pay,
-                        timestamp: new Date().toISOString()
-                    };
+                // Nama properti disesuaikan dengan yang ada di screenshot Firestore Anda
+                const newTx = {
+                    id: Date.now(),
+                    fakturNo: this.generateInvoiceNumber(),
+                    customerName: this.posForm.customerName.trim(),
+                    kategori: this.posForm.category,
+                    hasPijat: this.posForm.hasPijat,
+                    hasKeramas: this.posForm.hasKeramas,
+                    hasCatRambut: this.posForm.hasCatRambut,
+                    total: Number(total),
+                    bayarJumlah: Number(pay),
+                    "cap waktu": new Date().toISOString() // Disesuaikan dengan "cap waktu" di Firestore
+                };
+
+                try {
+                    await addDoc(collection(db, "transaksi"), newTx); // Nama koleksi di gambar adalah "transaksi"
+                    this.openReceiptModal(newTx);
+
+                    this.posForm.customerName = '';
+                    this.posForm.category = 'Dewasa';
+                    this.posForm.hasPijat = false;
+                    this.posForm.hasKeramas = false;
+                    this.posForm.hasCatRambut = false;
+                    this.posForm.payAmount = '';
+                } catch (err) {
+                    alert("Gagal menyimpan: " + err.message);
+                }
 
                     try {
                         // Kirim ke database Firebase Firestore

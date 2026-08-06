@@ -762,16 +762,11 @@
     </div>
 
     <!-- LOGIKA FIREBASE + ALPINE JAVASCRIPT -->
-<!-- FIREBASE + ALPINE JAVASCRIPT FIXED -->
+<!-- 1. FIRESTORE MODULE -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { 
-        getFirestore, 
-        collection, 
-        addDoc, 
-        onSnapshot, 
-        deleteDoc, 
-        doc 
+        getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc 
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -784,17 +779,11 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    // Tempelkan fungsi Firebase ke scope window agar bisa dibaca Alpine.js
-    window.db = db;
-    window.collection = collection;
-    window.addDoc = addDoc;
-    window.onSnapshot = onSnapshot;
-    window.deleteDoc = deleteDoc;
-    window.doc = doc;
+    window.db = getFirestore(app);
+    window.fs = { collection, addDoc, onSnapshot, deleteDoc, doc };
 </script>
 
+<!-- 2. ALPINE APP FUNCTION -->
 <script>
     let chartInstances = {};
 
@@ -843,45 +832,51 @@
             expenses: [],
 
             init() {
-            if (this.storeIsOpen) this.startTimer();
-            this.updateTimerStr();
+                if (this.storeIsOpen) this.startTimer();
+                this.updateTimerStr();
 
-            // 1. DENGARKAN DATA TRANSAKSI REAL-TIME DARI FIRESTORE
-            // Tambahkan "window." di depan onSnapshot, collection, dan db
-            window.onSnapshot(window.collection(window.db, "transaksi"), (snapshot) => {
-                let txs = [];
-                snapshot.forEach((docSnap) => {
-                    const data = docSnap.data();
-                    txs.push({ 
-                        firestoreId: docSnap.id, 
-                        ...data,
-                        invoiceNo: data.fakturNo || data.invoiceNo,
-                        category: data.kategori || data.category,
-                        payAmount: data.bayarJumlah || data.payAmount,
-                        timestamp: data["cap waktu"] || data.timestamp
+                const checkFirebase = setInterval(() => {
+                    if (window.fs && window.db) {
+                        clearInterval(checkFirebase);
+                        this.listenFirestoreData();
+                    }
+                }, 100);
+            },
+
+            listenFirestoreData() {
+                window.fs.onSnapshot(window.fs.collection(window.db, "transaksi"), (snapshot) => {
+                    let txs = [];
+                    snapshot.forEach((docSnap) => {
+                        const data = docSnap.data();
+                        txs.push({ 
+                            firestoreId: docSnap.id, 
+                            ...data,
+                            invoiceNo: data.fakturNo || data.invoiceNo || '',
+                            category: data.kategori || data.category || '',
+                            payAmount: data.bayarJumlah || data.payAmount || 0,
+                            timestamp: data["cap waktu"] || data.timestamp || new Date().toISOString()
+                        });
                     });
+                    this.transactions = txs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    this.renderCharts();
                 });
-                this.transactions = txs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                this.renderCharts();
-            });
 
-            // 2. DENGARKAN DATA PENGELUARAN REAL-TIME DARI FIRESTORE
-            window.onSnapshot(window.collection(window.db, "expenses"), (snapshot) => {
-                let exps = [];
-                snapshot.forEach((docSnap) => {
-                    exps.push({ firestoreId: docSnap.id, ...docSnap.data() });
+                window.fs.onSnapshot(window.fs.collection(window.db, "expenses"), (snapshot) => {
+                    let exps = [];
+                    snapshot.forEach((docSnap) => {
+                        exps.push({ firestoreId: docSnap.id, ...docSnap.data() });
+                    });
+                    this.expenses = exps.sort((a, b) => new Date(b.date) - new Date(a.date));
                 });
-                this.expenses = exps.sort((a, b) => new Date(b.date) - new Date(a.date));
-            });
 
-            this.$watch('activeTab', (tab) => {
-                if (tab === 'reports' || tab === 'dashboard') {
-                    this.$nextTick(() => { this.renderCharts(); });
-                }
-            });
+                this.$watch('activeTab', (tab) => {
+                    if (tab === 'reports' || tab === 'dashboard') {
+                        this.$nextTick(() => { this.renderCharts(); });
+                    }
+                });
 
-            this.$nextTick(() => { this.renderCharts(); });
-        },
+                this.$nextTick(() => { this.renderCharts(); });
+            },
 
             toggleStoreStatus() {
                 this.storeIsOpen = !this.storeIsOpen;
@@ -947,12 +942,12 @@
                 const pay = Number(this.posForm.payAmount) || total;
 
                 if (total === 0) {
-                    alert('Silakan pilih minimal 1 jenis layanan terlebih dahulu!');
+                    alert('Silakan pilih minimal 1 jenis layanan!');
                     return;
                 }
 
                 if (pay < total) {
-                    alert('Nominal uang bayar kurang dari total tagihan!');
+                    alert('Nominal uang bayar kurang!');
                     return;
                 }
 
@@ -970,7 +965,7 @@
                 };
 
                 try {
-                    await window.addDoc(window.collection(window.db, "transaksi"), newTx);
+                    await window.fs.addDoc(window.fs.collection(window.db, "transaksi"), newTx);
                     this.openReceiptModal(newTx);
 
                     this.posForm.customerName = '';
@@ -980,18 +975,18 @@
                     this.posForm.hasCatRambut = false;
                     this.posForm.payAmount = '';
                 } catch (err) {
-                    alert("Gagal menyimpan ke Firestore: " + err.message);
+                    alert("Gagal simpan: " + err.message);
                 }
             },
 
             async deleteTransaction(tx) {
-                if (confirm('Yakin ingin menghapus riwayat transaksi ini?')) {
+                if (confirm('Hapus transaksi ini?')) {
                     try {
                         if (tx.firestoreId) {
-                            await window.deleteDoc(window.doc(window.db, "transaksi", tx.firestoreId));
+                            await window.fs.deleteDoc(window.fs.doc(window.db, "transaksi", tx.firestoreId));
                         }
                     } catch (err) {
-                        alert("Gagal menghapus: " + err.message);
+                        alert("Gagal hapus: " + err.message);
                     }
                 }
             },
@@ -1011,7 +1006,7 @@
                 };
 
                 try {
-                    await window.addDoc(window.collection(window.db, "expenses"), newExp);
+                    await window.fs.addDoc(window.fs.collection(window.db, "expenses"), newExp);
                     this.expenseForm.description = '';
                     this.expenseForm.amount = '';
                     alert('Pengeluaran berhasil dicatat!');
@@ -1024,10 +1019,10 @@
                 if (confirm('Hapus pengeluaran ini?')) {
                     try {
                         if (exp.firestoreId) {
-                            await window.deleteDoc(window.doc(window.db, "expenses", exp.firestoreId));
+                            await window.fs.deleteDoc(window.fs.doc(window.db, "expenses", exp.firestoreId));
                         }
                     } catch (err) {
-                        alert("Gagal menghapus: " + err.message);
+                        alert("Gagal hapus: " + err.message);
                     }
                 }
             },
@@ -1044,7 +1039,6 @@
 
             getIncomeByPeriod(period) {
                 const now = new Date();
-                
                 return this.transactions.reduce((sum, t) => {
                     const txDate = new Date(t.timestamp);
                     let isMatch = false;
@@ -1164,6 +1158,8 @@
             },
 
             renderCharts() {
+                if (typeof Chart === 'undefined') return;
+
                 if (chartInstances['dashboardMiniChart']) chartInstances['dashboardMiniChart'].destroy();
                 if (chartInstances['incomeChart']) chartInstances['incomeChart'].destroy();
                 if (chartInstances['customerPieChart']) chartInstances['customerPieChart'].destroy();

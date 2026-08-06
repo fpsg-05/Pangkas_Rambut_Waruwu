@@ -13,7 +13,7 @@
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <!-- SheetJS for Excel -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- jsPDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
@@ -1155,6 +1155,57 @@
                 a.href = url;
                 a.download = `backup_nias_sumut_${new Date().toISOString().split('T')[0]}.json`;
                 a.click();
+            },
+            exportToExcel() {
+                if (typeof XLSX === 'undefined') {
+                    alert('Library Excel belum siap. Silakan refresh halaman!');
+                    return;
+                }
+
+                if (this.transactions.length === 0) {
+                    alert('Tidak ada data transaksi untuk diekspor!');
+                    return;
+                }
+
+                // 1. Format Data Transaksi
+                const dataTransaksi = this.transactions.map((t, idx) => ({
+                    "No": idx + 1,
+                    "No. Faktur": t.invoiceNo || '-',
+                    "Tanggal & Waktu": this.formatDateTimeFull(t.timestamp),
+                    "Nama Pelanggan": t.customerName || 'Pelanggan',
+                    "Kategori Utama": t.category || '-',
+                    "Layanan Tambahan": [
+                        t.hasPijat ? 'Pijat' : '',
+                        t.hasKeramas ? 'Keramas' : '',
+                        t.hasCatRambut ? 'Cat Rambut' : ''
+                    ].filter(Boolean).join(', ') || '-',
+                    "Total Bayar (Rp)": t.total || 0,
+                    "Uang Diterima (Rp)": t.payAmount || 0
+                }));
+
+                // 2. Format Data Pengeluaran
+                const dataPengeluaran = this.expenses.map((e, idx) => ({
+                    "No": idx + 1,
+                    "Tanggal": e.date || '-',
+                    "Kategori": e.category || '-',
+                    "Keterangan": e.description || '-',
+                    "Nominal (Rp)": e.amount || 0
+                }));
+
+                // 3. Buat Workbook Excel
+                const wb = XLSX.utils.book_new();
+                
+                const wsTransaksi = XLSX.utils.json_to_sheet(dataTransaksi);
+                XLSX.utils.book_append_sheet(wb, wsTransaksi, "Transaksi");
+
+                if (dataPengeluaran.length > 0) {
+                    const wsPengeluaran = XLSX.utils.json_to_sheet(dataPengeluaran);
+                    XLSX.utils.book_append_sheet(wb, wsPengeluaran, "Pengeluaran");
+                }
+
+                // 4. Unduh File .xlsx
+                const fileName = `Laporan_Pangkas_Rambut_${new Date().toISOString().split('T')[0]}.xlsx`;
+                XLSX.writeFile(wb, fileName);
             },
 
             renderCharts() {

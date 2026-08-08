@@ -69,9 +69,32 @@
         .sidebar-link.active { box-shadow: inset 3px 0 0 #ef4444, 0 8px 22px rgba(0,0,0,.12); }
         @media (max-width: 1023px) { .desktop-sidebar { transform: translateX(-105%); transition: transform .25s ease; } .desktop-sidebar.mobile-open { transform: translateX(0); } }
         @media (min-width: 1024px) { .desktop-sidebar { transform: translateX(0) !important; } }
+        body.theme-light { background:#f4f7fb !important; color:#0f172a !important; }
+        body.theme-light .bg-slate-950 { background-color:#f4f7fb !important; }
+        body.theme-light .bg-slate-900, body.theme-light .bg-slate-900\/95 { background-color:#ffffff !important; }
+        body.theme-light .bg-slate-900\/70, body.theme-light .bg-slate-900\/60 { background-color:#f8fafc !important; }
+        body.theme-light .bg-slate-800, body.theme-light .bg-slate-800\/60, body.theme-light .bg-slate-800\/40 { background-color:#eef2f7 !important; }
+        body.theme-light .bg-slate-700 { background-color:#e2e8f0 !important; }
+        body.theme-light .text-white { color:#0f172a !important; }
+        body.theme-light .text-slate-100 { color:#1e293b !important; }
+        body.theme-light .text-slate-200 { color:#334155 !important; }
+        body.theme-light .text-slate-300 { color:#475569 !important; }
+        body.theme-light .text-slate-400 { color:#64748b !important; }
+        body.theme-light .text-slate-500 { color:#64748b !important; }
+        body.theme-light .text-slate-600 { color:#94a3b8 !important; }
+        body.theme-light .border-slate-800, body.theme-light .border-slate-700 { border-color:#dbe3ee !important; }
+        body.theme-light .divide-slate-800 > :not([hidden]) ~ :not([hidden]) { border-color:#e2e8f0 !important; }
+        body.theme-light input, body.theme-light select, body.theme-light textarea { background:#ffffff !important; color:#0f172a !important; border-color:#dbe3ee !important; }
+        body.theme-light ::-webkit-scrollbar-track { background:#e2e8f0; } body.theme-light ::-webkit-scrollbar-thumb { background:#94a3b8; }
+        .settings-page-enter { animation:settingsPageIn .25s ease-out both; } @keyframes settingsPageIn { from{opacity:0;transform:translateX(14px)} to{opacity:1;transform:translateX(0)} }
+        .settings-card-icon { transition:transform .2s ease,background-color .2s ease,color .2s ease; } .settings-card:hover .settings-card-icon{transform:scale(1.06)}
+        .toggle-switch{position:relative;width:48px;height:28px;border-radius:999px;transition:.2s ease}.toggle-switch span{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s ease;box-shadow:0 2px 6px rgba(0,0,0,.2)}.toggle-switch.on{background:#dc2626}.toggle-switch.off{background:#475569}.toggle-switch.on span{transform:translateX(20px)}
+        body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{animation:none!important;transition:none!important}
+        .field-label{display:block;font-size:.75rem;font-weight:700;color:#94a3b8;margin-bottom:.35rem}.field-input{width:100%;padding:.75rem 1rem;border-radius:.75rem;border:1px solid #334155;background:#1e293b;color:#fff;outline:none}.field-input:focus{box-shadow:0 0 0 2px rgba(239,68,68,.35);border-color:#ef4444}
+        .connection-dot{width:8px;height:8px;border-radius:999px;display:inline-block;box-shadow:0 0 0 3px rgba(34,197,94,.08)}.connection-dot.offline{box-shadow:0 0 0 3px rgba(239,68,68,.08)}
     </style>
 </head>
-<body x-data="barberApp()" class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col transition-colors duration-200">
+<body x-data="barberApp()" :class="themeLight ? 'theme-light' : ''" class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col transition-colors duration-200">
     <!-- 1. Tag Pembuka Body (Ada di bagian atas file) -->
 
     <!-- 1. FORM LOGIN MODERN & ELEGANT -->
@@ -182,15 +205,16 @@
                 <button @click="activeTab='expenses'; mobileMenu=false" :class="activeTab==='expenses' ? 'bg-red-600 text-white active' : 'text-slate-400 hover:bg-slate-900 hover:text-white'" class="sidebar-link w-full px-3 py-2.5 rounded-xl text-sm flex items-center gap-3 text-left"><i class="fa-solid fa-wallet w-5 text-center"></i><span>Pengeluaran</span></button>
                 <button @click="activeTab='reports'; mobileMenu=false" :class="activeTab==='reports' ? 'bg-red-600 text-white active' : 'text-slate-400 hover:bg-slate-900 hover:text-white'" class="sidebar-link w-full px-3 py-2.5 rounded-xl text-sm flex items-center gap-3 text-left"><i class="fa-solid fa-file-invoice-dollar w-5 text-center"></i><span>Laporan & Ekspor</span></button>
                 <p class="px-3 pt-5 pb-2 text-[10px] uppercase tracking-widest text-slate-600 font-black">Sistem</p>
-                <button @click="activeTab='settings'; accountPage=false; mobileMenu=false" :class="activeTab==='settings' ? 'bg-red-600 text-white active' : 'text-slate-400 hover:bg-slate-900 hover:text-white'" class="sidebar-link w-full px-3 py-2.5 rounded-xl text-sm flex items-center gap-3 text-left"><i class="fa-solid fa-gear w-5 text-center"></i><span>Pengaturan</span></button>
+                <button @click="activeTab='settings'; accountPage=false; settingsPage=null; mobileMenu=false" :class="activeTab==='settings' ? 'bg-red-600 text-white active' : 'text-slate-400 hover:bg-slate-900 hover:text-white'" class="sidebar-link w-full px-3 py-2.5 rounded-xl text-sm flex items-center gap-3 text-left"><i class="fa-solid fa-gear w-5 text-center"></i><span>Pengaturan</span></button>
                 <button @click="backupData(); mobileMenu=false" class="sidebar-link w-full px-3 py-2.5 rounded-xl text-sm flex items-center gap-3 text-left text-slate-400 hover:bg-slate-900 hover:text-white"><i class="fa-solid fa-database w-5 text-center"></i><span>Backup Data</span></button>
             </div>
             <div class="p-3 border-t border-slate-800">
                 <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 mb-2">
                     <div class="flex items-center justify-between mb-2"><span class="text-[10px] uppercase font-black text-slate-500">Status Toko</span><span class="text-[10px] font-black px-2 py-0.5 rounded-full" :class="storeIsOpen ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'" x-text="storeIsOpen ? '● BUKA' : '● TUTUP'"></span></div>
-                    <div class="text-xs text-slate-400">Target Hari Ini</div><div class="font-black text-white text-sm mt-1" x-text="formatRupiah(dailyTarget)"></div>
-                    <div class="h-1.5 bg-slate-800 rounded-full mt-2 overflow-hidden"><div class="h-full bg-red-500 rounded-full transition-all" :style="`width:${Math.min(100,(getIncomeByPeriod('today')/Math.max(1,dailyTarget))*100)}%`"></div></div>
+                    <div x-show="showDailyTarget" class="text-xs text-slate-400">Target Hari Ini</div><div x-show="showDailyTarget" class="font-black text-white text-sm mt-1" x-text="formatRupiah(dailyTarget)"></div>
+                    <div x-show="showDailyTarget" class="h-1.5 bg-slate-800 rounded-full mt-2 overflow-hidden"><div class="h-full bg-red-500 rounded-full transition-all" :style="`width:${Math.min(100,(getIncomeByPeriod('today')/Math.max(1,dailyTarget))*100)}%`"></div></div>
                 </div>
+                <div class="flex items-center justify-between gap-2 px-2 py-2 mb-2 rounded-xl bg-slate-900 border border-slate-800"><span class="text-[10px] font-bold text-slate-400">Koneksi</span><span class="text-[10px] font-black flex items-center gap-1.5" :class="onlineStatus ? 'text-emerald-400' : 'text-red-400'"><span class="connection-dot" :class="onlineStatus ? 'bg-emerald-400' : 'bg-red-400 offline'"></span><span x-text="onlineStatus ? 'Online' : 'Offline'"></span></span></div>
                 <div class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800">
                     <div class="w-8 h-8 rounded-lg bg-red-600/15 text-red-400 flex items-center justify-center"><i class="fa-solid fa-user-shield text-xs"></i></div>
                     <div class="min-w-0 flex-1"><p class="text-xs font-bold text-white truncate" x-text="currentUser?.name || 'Pengguna'"></p><p class="text-[10px] text-slate-500 uppercase" x-text="currentUser?.role==='admin45' ? 'ADMIN' : 'KASIR'"></p></div>
@@ -297,7 +321,7 @@
                 </div>
 
                 <div class="bg-slate-900 rounded-2xl p-5 border border-blue-500/30 shadow-md relative overflow-hidden">
-                    <div class="absolute top-0 right-0 bg-blue-600 text-[9px] font-bold px-2 py-0.5 rounded-bl">50% BAGI HASIL</div>
+                    <div class="absolute top-0 right-0 bg-blue-600 text-[9px] font-bold px-2 py-0.5 rounded-bl"><span x-text="(Number(settingsData.finance.staffPercent)||50)+'% BAGI HASIL'"></span></div>
                     <div class="flex justify-between items-start">
                         <div>
                             <p class="text-[11px] font-bold text-blue-400 uppercase tracking-wider">PENDAPATAN BERSIH HARI INI</p>
@@ -438,7 +462,7 @@
                                     <input type="radio" name="category" value="Dewasa" x-model="posForm.category" class="text-red-600 focus:ring-red-500">
                                     <span class="font-bold text-sm">👨 Dewasa</span>
                                 </div>
-                                <span class="font-black text-red-400 text-xs">Rp20k</span>
+                                <span class="font-black text-red-400 text-xs" x-text="formatRupiah(prices.Dewasa)"></span>
                             </label>
 
                             <label :class="posForm.category === 'Anak-anak' ? 'border-red-500 bg-red-950/20 text-white' : 'border-slate-800 bg-slate-800/40 text-slate-300 hover:bg-slate-800'" class="border-2 rounded-xl p-3.5 flex items-center justify-between cursor-pointer transition">
@@ -446,7 +470,7 @@
                                     <input type="radio" name="category" value="Anak-anak" x-model="posForm.category" class="text-red-600 focus:ring-red-500">
                                     <span class="font-bold text-sm">👦 Anak-anak</span>
                                 </div>
-                                <span class="font-black text-red-400 text-xs">Rp15k</span>
+                                <span class="font-black text-red-400 text-xs" x-text="formatRupiah(prices['Anak-anak'])"></span>
                             </label>
 
                             <label :class="posForm.category === 'None' ? 'border-slate-500 bg-slate-800 text-white' : 'border-slate-800 bg-slate-800/40 text-slate-400 hover:bg-slate-800'" class="border-2 rounded-xl p-3.5 flex items-center justify-between cursor-pointer transition">
@@ -461,33 +485,25 @@
 
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">2. Layanan Tambahan / Mandiri</label>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             <label :class="posForm.hasCatRambut ? 'border-red-500 bg-red-950/20 text-white' : 'border-slate-800 bg-slate-800/40 text-slate-300 hover:bg-slate-800'" class="border-2 rounded-xl p-3.5 flex items-center justify-between cursor-pointer transition">
-                                <div class="flex items-center space-x-2.5">
-                                    <input type="checkbox" x-model="posForm.hasCatRambut" class="rounded text-red-600 focus:ring-red-500">
-                                    <div>
-                                        <span class="font-bold text-sm block">🎨 Pewarnaan Dasar</span>
-                                        <span class="text-[10px] text-slate-400">Cat Rambut</span>
-                                    </div>
-                                </div>
-                                <span class="font-bold text-xs text-red-400">+Rp30k</span>
+                                <div class="flex items-center space-x-2.5"><input type="checkbox" x-model="posForm.hasCatRambut" class="rounded text-red-600 focus:ring-red-500"><div><span class="font-bold text-sm block">🎨 Pewarnaan Dasar</span><span class="text-[10px] text-slate-400">Cat Rambut</span></div></div>
+                                <span class="font-bold text-xs text-red-400" x-text="'+'+formatRupiah(prices.CatRambut)"></span>
                             </label>
-
                             <label :class="posForm.hasPijat ? 'border-blue-500 bg-blue-950/20 text-white' : 'border-slate-800 bg-slate-800/40 text-slate-300 hover:bg-slate-800'" class="border-2 rounded-xl p-3.5 flex items-center justify-between cursor-pointer transition">
-                                <div class="flex items-center space-x-2.5">
-                                    <input type="checkbox" x-model="posForm.hasPijat" class="rounded text-blue-600 focus:ring-blue-500">
-                                    <span class="font-bold text-sm">💆 Pijat</span>
-                                </div>
-                                <span class="font-bold text-xs text-blue-400">+Rp5k</span>
+                                <div class="flex items-center space-x-2.5"><input type="checkbox" x-model="posForm.hasPijat" class="rounded text-red-600 focus:ring-red-500"><span class="font-bold text-sm">💆 Pijat</span></div>
+                                <span class="font-bold text-xs text-blue-400" x-text="'+'+formatRupiah(prices.Pijat)"></span>
                             </label>
-
                             <label :class="posForm.hasKeramas ? 'border-blue-500 bg-blue-950/20 text-white' : 'border-slate-800 bg-slate-800/40 text-slate-300 hover:bg-slate-800'" class="border-2 rounded-xl p-3.5 flex items-center justify-between cursor-pointer transition">
-                                <div class="flex items-center space-x-2.5">
-                                    <input type="checkbox" x-model="posForm.hasKeramas" class="rounded text-blue-600 focus:ring-blue-500">
-                                    <span class="font-bold text-sm">🚿 Keramas</span>
-                                </div>
-                                <span class="font-bold text-xs text-blue-400">+Rp5k</span>
+                                <div class="flex items-center space-x-2.5"><input type="checkbox" x-model="posForm.hasKeramas" class="rounded text-red-600 focus:ring-red-500"><span class="font-bold text-sm">🚿 Keramas</span></div>
+                                <span class="font-bold text-xs text-blue-400" x-text="'+'+formatRupiah(prices.Keramas)"></span>
                             </label>
+                            <template x-for="item in extraServices" :key="item.id">
+                                <label x-show="item.active !== false" :class="posForm.extraServiceIds.includes(item.id) ? 'border-red-500 bg-red-950/20 text-white' : 'border-slate-800 bg-slate-800/40 text-slate-300 hover:bg-slate-800'" class="border-2 rounded-xl p-3.5 flex items-center justify-between cursor-pointer transition">
+                                    <div class="flex items-center space-x-2.5"><input type="checkbox" :value="item.id" x-model="posForm.extraServiceIds" class="rounded text-red-600 focus:ring-red-500"><span class="font-bold text-sm" x-text="item.name"></span></div>
+                                    <span class="font-bold text-xs text-red-400" x-text="'+'+formatRupiah(item.price)"></span>
+                                </label>
+                            </template>
                         </div>
                     </div>
 
@@ -723,7 +739,7 @@
                 <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 card-hover"><p class="text-[10px] uppercase font-black tracking-widest text-slate-500">Total Pemasukan</p><p class="text-2xl font-black text-emerald-400 mt-2" x-text="formatRupiah(reportIncomeTotal)"></p><p class="text-[10px] text-slate-500 mt-1">Semua transaksi pada periode terpilih</p></div>
                 <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 card-hover"><p class="text-[10px] uppercase font-black tracking-widest text-slate-500">Total Pengeluaran</p><p class="text-2xl font-black text-red-400 mt-2" x-text="formatRupiah(reportExpenseTotal)"></p><p class="text-[10px] text-slate-500 mt-1">Dikurangkan langsung dari pemasukan</p></div>
                 <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 card-hover"><p class="text-[10px] uppercase font-black tracking-widest text-slate-500">Saldo Setelah Pengeluaran</p><p class="text-2xl font-black text-blue-400 mt-2" x-text="formatRupiah(reportBalance)"></p><p class="text-[10px] text-slate-500 mt-1">Pemasukan - pengeluaran</p></div>
-                <div class="bg-slate-900 border border-red-600/40 rounded-2xl p-5 card-hover relative overflow-hidden"><span class="absolute top-0 right-0 bg-red-600 text-[9px] font-black px-2 py-1 rounded-bl-xl">50% BAGI HASIL</span><p class="text-[10px] uppercase font-black tracking-widest text-red-400">Total Bersih</p><p class="text-2xl font-black text-white mt-2" x-text="formatRupiah(reportNetTotal)"></p><p class="text-[10px] text-slate-500 mt-1">(Pemasukan - Pengeluaran) ÷ 2</p></div>
+                <div class="bg-slate-900 border border-red-600/40 rounded-2xl p-5 card-hover relative overflow-hidden"><span class="absolute top-0 right-0 bg-red-600 text-[9px] font-black px-2 py-1 rounded-bl-xl" x-text="(Number(settingsData.finance.staffPercent)||50)+'% BAGI HASIL'"></span><p class="text-[10px] uppercase font-black tracking-widest text-red-400">Total Bersih</p><p class="text-2xl font-black text-white mt-2" x-text="formatRupiah(reportNetTotal)"></p><p class="text-[10px] text-slate-500 mt-1" x-text="`(Pemasukan - Pengeluaran) × ${Number(settingsData.finance.staffPercent)||50}%`"></p></div>
             </div>
 
             <div class="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
@@ -750,12 +766,6 @@
                         </div>
                     </template>
                 </div>
-                <div class="border-t border-slate-800 p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-950/40">
-                    <div class="rounded-xl bg-slate-900 border border-slate-800 p-4"><p class="text-[10px] uppercase text-slate-500 font-bold">Pemasukan</p><p class="font-black text-emerald-400 mt-1" x-text="formatRupiah(reportIncomeTotal)"></p></div>
-                    <div class="rounded-xl bg-slate-900 border border-slate-800 p-4"><p class="text-[10px] uppercase text-slate-500 font-bold">Pengeluaran</p><p class="font-black text-red-400 mt-1" x-text="formatRupiah(reportExpenseTotal)"></p></div>
-                    <div class="rounded-xl bg-slate-900 border border-slate-800 p-4"><p class="text-[10px] uppercase text-slate-500 font-bold">Setelah Dikurangi</p><p class="font-black text-blue-400 mt-1" x-text="formatRupiah(reportBalance)"></p></div>
-                    <div class="rounded-xl bg-red-600/10 border border-red-600/30 p-4"><p class="text-[10px] uppercase text-red-400 font-bold">Total Bersih ÷ 2</p><p class="font-black text-white mt-1" x-text="formatRupiah(reportNetTotal)"></p></div>
-                </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -766,29 +776,100 @@
 
         <!-- ==================== TAB 6: PENGATURAN ==================== -->
         <div x-show="activeTab === 'settings'" class="max-w-5xl mx-auto space-y-6">
-            <div x-show="!accountPage" class="space-y-6">
+            <div x-show="!accountPage && !settingsPage" x-cloak class="space-y-6">
                 <div class="bg-slate-900 rounded-2xl p-6 border border-slate-800 shadow-md">
-                    <div class="flex items-center gap-3 border-b border-slate-800 pb-4"><div class="w-11 h-11 rounded-xl bg-red-600/15 text-red-400 flex items-center justify-center"><i class="fa-solid fa-sliders"></i></div><div><h3 class="text-lg font-black text-white">Pengaturan Sistem</h3><p class="text-xs text-slate-500">Kelola target, backup, dan akses sistem.</p></div></div>
-                    <div class="mt-5"><label class="block text-xs font-semibold text-slate-400 mb-1">Target Omzet Harian (Rp)</label><input type="number" x-model.number="dailyTarget" @change="saveDailyTarget()" min="0" class="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-800 text-white focus:ring-2 focus:ring-red-500 outline-none font-mono"></div>
-                    <div class="mt-6 pt-5 border-t border-slate-800"><h4 class="font-bold text-sm text-white">Cadangkan & Pemulihan Data</h4><p class="text-xs text-slate-500 mt-1">Data transaksi dan pengeluaran tetap berada di Firebase.</p><div class="flex flex-wrap gap-3 mt-3"><button @click="backupData()" class="app-click px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold"><i class="fa-solid fa-download mr-1.5"></i>Download Backup DB</button><label class="app-click px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white rounded-xl text-xs font-bold cursor-pointer"><i class="fa-solid fa-upload mr-1.5"></i>Restore Database<input type="file" @change="restoreData($event)" accept=".json" class="hidden"></label></div></div>
+                    <div class="flex items-center gap-3 border-b border-slate-800 pb-4">
+                        <div class="w-11 h-11 rounded-xl bg-red-600/15 text-red-400 flex items-center justify-center"><i class="fa-solid fa-sliders"></i></div>
+                        <div><h3 class="text-lg font-black text-white">Pengaturan Sistem</h3><p class="text-xs text-slate-500">Setiap konfigurasi memiliki halaman khusus agar pengelolaan lebih rapi.</p></div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-5">
+                        <button @click="openSettingsPage('profile')" class="settings-card app-click bg-slate-800/60 border border-slate-700 rounded-2xl p-5 text-left card-hover"><div class="settings-card-icon w-11 h-11 rounded-xl bg-red-600/15 text-red-400 flex items-center justify-center mb-4"><i class="fa-solid fa-store"></i></div><p class="font-black text-white">Profil Barbershop</p><p class="text-xs text-slate-500 mt-1">Nama usaha, alamat, kontak dan jam operasional.</p></button>
+                        <button @click="openSettingsPage('services')" class="settings-card app-click bg-slate-800/60 border border-slate-700 rounded-2xl p-5 text-left card-hover"><div class="settings-card-icon w-11 h-11 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center mb-4"><i class="fa-solid fa-scissors"></i></div><p class="font-black text-white">Layanan & Harga</p><p class="text-xs text-slate-500 mt-1">Atur harga layanan dan layanan tambahan.</p></button>
+                        <button @click="openSettingsPage('finance')" class="settings-card app-click bg-slate-800/60 border border-slate-700 rounded-2xl p-5 text-left card-hover"><div class="settings-card-icon w-11 h-11 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center mb-4"><i class="fa-solid fa-wallet"></i></div><p class="font-black text-white">Keuangan</p><p class="text-xs text-slate-500 mt-1">Target, pembagian pendapatan dan aturan bersih.</p></button>
+                        <button @click="openSettingsPage('invoice')" class="settings-card app-click bg-slate-800/60 border border-slate-700 rounded-2xl p-5 text-left card-hover"><div class="settings-card-icon w-11 h-11 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center mb-4"><i class="fa-solid fa-receipt"></i></div><p class="font-black text-white">Pengaturan Faktur</p><p class="text-xs text-slate-500 mt-1">Atur informasi dan pesan pada faktur.</p></button>
+                        <button @click="openSettingsPage('appearance')" class="settings-card app-click bg-slate-800/60 border border-slate-700 rounded-2xl p-5 text-left card-hover"><div class="settings-card-icon w-11 h-11 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center mb-4"><i class="fa-solid fa-palette"></i></div><p class="font-black text-white">Tampilan & Suara</p><p class="text-xs text-slate-500 mt-1">Mode terang/gelap, animasi dan suara transaksi.</p></button>
+                        <button @click="openSettingsPage('language')" class="settings-card app-click bg-slate-800/60 border border-slate-700 rounded-2xl p-5 text-left card-hover"><div class="settings-card-icon w-11 h-11 rounded-xl bg-violet-500/15 text-violet-400 flex items-center justify-center mb-4"><i class="fa-solid fa-language"></i></div><p class="font-black text-white">Bahasa</p><p class="text-xs text-slate-500 mt-1">Pilih bahasa Indonesia atau English.</p></button>
+                        <button @click="openSettingsPage('notifications')" class="settings-card app-click bg-slate-800/60 border border-slate-700 rounded-2xl p-5 text-left card-hover"><div class="settings-card-icon w-11 h-11 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center mb-4"><i class="fa-solid fa-bell"></i></div><p class="font-black text-white">Notifikasi</p><p class="text-xs text-slate-500 mt-1">Atur pemberitahuan untuk aktivitas penting.</p></button>
+                        <button @click="openSettingsPage('security')" class="settings-card app-click bg-slate-800/60 border border-slate-700 rounded-2xl p-5 text-left card-hover"><div class="settings-card-icon w-11 h-11 rounded-xl bg-rose-500/15 text-rose-400 flex items-center justify-center mb-4"><i class="fa-solid fa-shield-halved"></i></div><p class="font-black text-white">Keamanan</p><p class="text-xs text-slate-500 mt-1">Konfirmasi tindakan sensitif dan akses akun.</p></button>
+                        <button @click="openSettingsPage('backup')" class="settings-card app-click bg-slate-800/60 border border-slate-700 rounded-2xl p-5 text-left card-hover"><div class="settings-card-icon w-11 h-11 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center mb-4"><i class="fa-solid fa-database"></i></div><p class="font-black text-white">Backup & Pemulihan</p><p class="text-xs text-slate-500 mt-1">Cadangkan dan pulihkan data aplikasi.</p></button>
+                        <button @click="openSettingsPage('data')" class="settings-card app-click bg-slate-800/60 border border-slate-700 rounded-2xl p-5 text-left card-hover"><div class="settings-card-icon w-11 h-11 rounded-xl bg-slate-500/15 text-slate-300 flex items-center justify-center mb-4"><i class="fa-solid fa-box-archive"></i></div><p class="font-black text-white">Pengelolaan Data</p><p class="text-xs text-slate-500 mt-1">Arsip dan penghapusan data secara terkontrol.</p></button>
+                        <button x-show="isAdmin()" @click="openAccountPage()" class="settings-card app-click bg-slate-800/60 border border-slate-700 rounded-2xl p-5 text-left card-hover"><div class="settings-card-icon w-11 h-11 rounded-xl bg-red-600/15 text-red-400 flex items-center justify-center mb-4"><i class="fa-solid fa-users-gear"></i></div><p class="font-black text-white">Manajemen Akun</p><p class="text-xs text-slate-500 mt-1">Kelola akun Admin dan Kasir.</p></button>
+                    </div>
+                    <div x-show="!isAdmin()" class="mt-4 bg-slate-800/40 border border-slate-700 p-4 rounded-2xl text-center"><i class="fa-solid fa-lock text-red-400"></i><span class="text-xs text-slate-500 ml-2">Manajemen Akun hanya tersedia untuk Admin.</span></div>
                 </div>
-
-                <div x-show="isAdmin()" class="bg-slate-900 rounded-2xl p-6 border border-slate-800 shadow-md">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div class="flex items-center gap-3"><div class="w-11 h-11 rounded-xl bg-red-600/15 text-red-400 flex items-center justify-center"><i class="fa-solid fa-users-gear"></i></div><div><h3 class="font-black text-white">Manajemen Akun</h3><p class="text-xs text-slate-500">Hanya Admin yang dapat membuat atau menghapus akun.</p></div></div><button @click="openAccountPage()" class="app-click px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs"><i class="fa-solid fa-user-plus mr-1"></i> Buat Akun Baru</button></div>
-                    <div class="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3"><div class="rounded-xl bg-slate-800 p-4"><p class="text-[10px] uppercase text-slate-500 font-bold">Total Akun</p><p class="text-xl font-black text-white mt-1" x-text="usersList.length"></p></div><div class="rounded-xl bg-slate-800 p-4"><p class="text-[10px] uppercase text-slate-500 font-bold">Admin</p><p class="text-xl font-black text-red-400 mt-1" x-text="usersList.filter(u=>u.role==='admin45'||u.role==='admin').length"></p></div><div class="rounded-xl bg-slate-800 p-4"><p class="text-[10px] uppercase text-slate-500 font-bold">Kasir</p><p class="text-xl font-black text-blue-400 mt-1" x-text="usersList.filter(u=>u.role==='kasir').length"></p></div></div>
-                </div>
-                <div x-show="!isAdmin()" class="bg-slate-900/70 border border-slate-800 p-5 rounded-2xl text-center"><i class="fa-solid fa-lock text-red-400 text-xl"></i><p class="text-sm font-bold text-white mt-2">Akses Manajemen Akun Terkunci</p><p class="text-xs text-slate-500 mt-1">Kasir tidak memiliki izin membuat, mengedit, atau menghapus akun.</p></div>
             </div>
 
-            <!-- HALAMAN PEMBUATAN AKUN KHUSUS ADMIN -->
+            <div x-show="settingsPage" x-cloak class="settings-page-enter"><div class="flex items-center justify-between gap-4 mb-5"><div><p class="text-xs uppercase tracking-widest text-red-400 font-black">Pengaturan / <span x-text="settingsPageTitle()"></span></p><h2 class="text-2xl font-black text-white mt-1" x-text="settingsPageTitle()"></h2><p class="text-xs text-slate-500 mt-1" x-text="settingsPageDescription()"></p></div><button @click="closeSettingsPage()" class="app-click px-4 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl text-xs font-bold"><i class="fa-solid fa-arrow-left mr-1"></i>Kembali</button></div>
+<div x-show="settingsPage==='profile'" x-cloak class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
+<div class="p-4 rounded-2xl bg-red-600/10 border border-red-500/20"><p class="text-sm font-black text-red-300">Identitas Usaha</p><p class="text-xs text-slate-500 mt-1">Informasi ini digunakan pada faktur dan identitas aplikasi.</p></div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="field-label">Nama Barbershop</label><input x-model="settingsData.profile.name" class="field-input"></div><div><label class="field-label">Nomor WhatsApp</label><input x-model="settingsData.profile.phone" class="field-input" placeholder="08xxxxxxxxxx"></div><div class="md:col-span-2"><label class="field-label">Alamat</label><textarea x-model="settingsData.profile.address" rows="3" class="field-input"></textarea></div><div><label class="field-label">Jam Buka</label><input type="time" x-model="settingsData.profile.openTime" class="field-input"></div><div><label class="field-label">Jam Tutup</label><input type="time" x-model="settingsData.profile.closeTime" class="field-input"></div><div><label class="field-label">Instagram</label><input x-model="settingsData.profile.instagram" class="field-input" placeholder="@namaakun"></div><div><label class="field-label">URL Logo</label><input x-model="settingsData.profile.logoUrl" class="field-input" placeholder="https://.../logo.png"></div><div class="md:col-span-2"><label class="field-label">Deskripsi Singkat</label><textarea x-model="settingsData.profile.description" rows="2" class="field-input" placeholder="Deskripsi usaha..."></textarea></div></div>
+<div x-show="settingsData.profile.logoUrl" class="flex items-center gap-4 p-4 rounded-2xl bg-slate-800/60 border border-slate-700"><div class="w-20 h-20 rounded-xl bg-white border border-slate-700 flex items-center justify-center overflow-hidden shrink-0"><img :src="settingsData.profile.logoUrl" referrerpolicy="no-referrer" class="w-full h-full object-contain p-1" @error="$el.closest('.flex').querySelector('.logo-error').classList.remove('hidden'); $el.classList.add('hidden')"></div><div><p class="text-xs font-bold text-white">Preview Logo</p><p class="text-[11px] text-slate-500 mt-1">Logo yang tampil di sini akan digunakan pada faktur.</p><p class="logo-error hidden text-[11px] text-amber-400 mt-2">Logo tidak dapat dimuat. Periksa URL atau pastikan gambar bisa diakses publik.</p></div></div>
+<button @click="saveAppSettings('profile')" class="app-click px-5 py-3 bg-red-600 text-white rounded-xl font-black text-sm">Simpan Profil</button></div>
+<div x-show="settingsPage==='services'" x-cloak class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+<div><div class="flex items-center justify-between gap-3 mb-3"><div><h3 class="font-black text-white">Layanan Utama</h3><p class="text-xs text-slate-500 mt-1">Harga ini langsung digunakan oleh kasir.</p></div><span class="text-[10px] px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400 font-bold">TERSINKRON</span></div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4"><template x-for="item in serviceSettingKeys" :key="item.key"><div class="p-4 rounded-2xl bg-slate-800/60 border border-slate-700"><label class="field-label" x-text="item.label"></label><div class="relative"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">Rp</span><input type="number" min="0" x-model.number="prices[item.key]" class="field-input font-mono pl-10"></div></div></template></div></div>
+<div class="border-t border-slate-800 pt-5"><div class="flex items-center justify-between mb-3"><div><h3 class="font-black text-white">Layanan Tambahan</h3><p class="text-xs text-slate-500 mt-1">Buat layanan baru tanpa mengubah kode program.</p></div><button @click="addExtraService()" class="app-click px-4 py-2.5 rounded-xl bg-red-600 text-white text-xs font-black"><i class="fa-solid fa-plus mr-1"></i>Tambah Layanan</button></div>
+<div class="space-y-3"><template x-for="(item,index) in extraServices" :key="item.id"><div class="grid grid-cols-1 md:grid-cols-[1fr_180px_auto] gap-3 p-4 rounded-2xl bg-slate-800/60 border border-slate-700"><div><label class="field-label">Nama Layanan</label><input x-model="item.name" class="field-input" placeholder="Contoh: Creambath"></div><div><label class="field-label">Harga</label><input type="number" min="0" x-model.number="item.price" class="field-input font-mono"></div><button @click="removeExtraService(index)" class="app-click md:self-end h-11 px-4 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 font-bold"><i class="fa-solid fa-trash"></i><span class="md:hidden ml-2">Hapus</span></button></div></template><div x-show="!extraServices.length" class="p-5 rounded-2xl border border-dashed border-slate-700 text-center text-xs text-slate-500">Belum ada layanan tambahan.</div></div></div>
+<div class="flex flex-col sm:flex-row gap-3"><button @click="saveServices()" class="app-click flex-1 py-3 bg-red-600 text-white rounded-xl font-black text-sm">Simpan Semua Layanan</button><button @click="resetServices()" class="app-click px-5 py-3 bg-slate-800 border border-slate-700 text-slate-200 rounded-xl font-bold text-sm">Kembalikan Default</button></div></div>
+<div x-show="settingsPage==='finance'" x-cloak class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+<div class="flex items-center justify-between gap-4 p-4 rounded-2xl bg-slate-800/60 border border-slate-700"><div><p class="font-black text-white">Tampilkan Target Pendapatan</p><p class="text-xs text-slate-500 mt-1">Jika OFF, target tidak ditampilkan di Dashboard dan sidebar. Nilainya tetap tersimpan.</p></div><button @click="toggleDailyTarget()" class="toggle-switch shrink-0" :class="showDailyTarget ? 'on' : 'off'"><span></span></button></div>
+<div x-show="showDailyTarget" x-transition class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="field-label">Target Omzet Harian (Rp)</label><input type="number" min="0" x-model.number="dailyTarget" class="field-input font-mono"></div><div class="p-4 rounded-xl bg-red-600/10 border border-red-500/20"><p class="text-xs font-bold text-red-300">Preview Target</p><p class="text-xl font-black text-white mt-1" x-text="formatRupiah(dailyTarget)"></p></div></div>
+<div class="border-t border-slate-800 pt-5"><h3 class="font-black text-white mb-3">Pembagian Pendapatan</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="field-label">Bagian Pemilik (%)</label><input type="number" min="0" max="100" x-model.number="settingsData.finance.ownerPercent" class="field-input"></div><div><label class="field-label">Bagian Karyawan (%)</label><input type="number" min="0" max="100" x-model.number="settingsData.finance.staffPercent" class="field-input"></div></div><p class="text-xs mt-3" :class="Number(settingsData.finance.ownerPercent)+Number(settingsData.finance.staffPercent)===100?'text-emerald-400':'text-amber-400'" x-text="`Total pembagian: ${Number(settingsData.finance.ownerPercent||0)+Number(settingsData.finance.staffPercent||0)}%`"></p></div>
+<div class="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20"><p class="text-sm font-black text-emerald-400">Rumus Rekap Bersih</p><p class="text-xs text-slate-400 mt-1">(Total Pemasukan - Total Pengeluaran) × persentase bagian karyawan.</p><p class="text-xs text-slate-500 mt-2">Pastikan persentase Pemilik + Karyawan = 100%.</p></div>
+<button @click="saveFinanceSettings()" class="app-click px-5 py-3 bg-red-600 text-white rounded-xl font-black text-sm">Simpan Keuangan</button></div>
+<div x-show="settingsPage==='invoice'" x-cloak class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
+<div class="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20"><p class="text-sm font-black text-purple-300">Header Faktur</p><p class="text-xs text-slate-500 mt-1">Atur judul dan informasi yang tampil di bagian atas faktur.</p></div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="field-label">Judul Header</label><input x-model="settingsData.invoice.headerTitle" class="field-input" placeholder="Contoh: PANGKAS RAMBUT WARUWU"></div><div><label class="field-label">Subjudul Header</label><input x-model="settingsData.invoice.headerSubtitle" class="field-input" placeholder="Contoh: Nias Sumut"></div><div><label class="field-label">Prefix Nomor Faktur</label><input x-model="settingsData.invoice.prefix" class="field-input" placeholder="INV"></div><label class="flex items-center gap-3 p-4 rounded-xl bg-slate-800/60 border border-slate-700"><input type="checkbox" x-model="settingsData.invoice.showLogo" class="w-4 h-4 accent-red-600"><span><span class="block text-sm font-bold text-white">Tampilkan Logo</span><span class="text-xs text-slate-500">Logo dari Profil Barbershop ditampilkan pada faktur.</span></span></label><label class="md:col-span-2 flex items-center gap-3 p-4 rounded-xl bg-slate-800/60 border border-slate-700"><input type="checkbox" x-model="settingsData.invoice.showCashier" class="w-4 h-4 accent-red-600"><span><span class="block text-sm font-bold text-white">Tampilkan Nama Kasir</span><span class="text-xs text-slate-500">Nama kasir yang melakukan transaksi dicetak pada faktur.</span></span></label></div>
+<div><label class="field-label">Pesan Footer Faktur</label><textarea x-model="settingsData.invoice.footer" rows="3" class="field-input"></textarea></div>
+<div class="p-4 rounded-2xl bg-slate-800/60 border border-slate-700"><div class="flex items-center justify-between gap-3"><p class="text-xs font-bold text-slate-400 uppercase">Preview Header</p><span class="text-[10px] text-emerald-400 font-bold">LIVE PREVIEW</span></div><div class="mt-3 bg-white text-black rounded-xl p-5 text-center font-mono text-xs"><img x-show="settingsData.invoice.showLogo && settingsData.profile.logoUrl" :src="settingsData.profile.logoUrl" referrerpolicy="no-referrer" class="w-14 h-14 object-contain mx-auto mb-2 bg-white" @error="$el.src=''; $el.style.display='none'"><p class="font-black text-base" x-text="settingsData.invoice.headerTitle || settingsData.profile.name || 'PANGKAS RAMBUT NIAS SUMUT'"></p><p class="font-bold" x-show="settingsData.invoice.headerSubtitle" x-text="settingsData.invoice.headerSubtitle"></p><p x-text="settingsData.profile.address || 'Alamat usaha'"></p><p x-text="settingsData.profile.phone || 'Nomor kontak'"></p><p x-show="settingsData.invoice.showCashier" class="mt-2 font-bold">Kasir: <span x-text="currentUser?.name || currentUser?.username || 'Kasir'"></span></p></div><p x-show="settingsData.profile.logoUrl && settingsData.invoice.showLogo" class="text-[11px] text-slate-500 mt-2">Jika logo belum muncul, pastikan URL logo dapat diakses publik dan berakhiran format gambar seperti .png atau .jpg.</p></div>
+<button @click="saveAppSettings('invoice')" class="app-click px-5 py-3 bg-red-600 text-white rounded-xl font-black text-sm">Simpan Faktur</button></div>
+<div x-show="settingsPage==='appearance'" x-cloak class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5"><div><p class="font-black text-white">Mode Tampilan</p><div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3"><button @click="setTheme('dark')" class="app-click p-4 rounded-2xl border text-left" :class="themeLight ? 'border-slate-700 bg-slate-800/50' : 'border-red-500 bg-red-600/10'"><i class="fa-solid fa-moon text-red-400"></i><span class="block font-black text-white mt-2">Mode Gelap</span><span class="text-xs text-slate-500">Tampilan default.</span></button><button @click="setTheme('light')" class="app-click p-4 rounded-2xl border text-left" :class="themeLight ? 'border-red-500 bg-red-600/10' : 'border-slate-700 bg-slate-800/50'"><i class="fa-solid fa-sun text-amber-400"></i><span class="block font-black text-white mt-2">Mode Terang</span><span class="text-xs text-slate-500">Tampilan cerah.</span></button></div></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><button @click="toggleAnimation()" class="p-4 rounded-2xl bg-slate-800/60 border border-slate-700 text-left"><div class="flex items-center justify-between"><span class="font-bold text-white">Animasi UI</span><span class="toggle-switch" :class="settingsData.appearance.animations ? 'on' : 'off'"><span></span></span></div></button><button @click="toggleSuccessSound()" class="p-4 rounded-2xl bg-slate-800/60 border border-slate-700 text-left"><div class="flex items-center justify-between"><span class="font-bold text-white">Suara Transaksi</span><span class="toggle-switch" :class="settingsData.appearance.successSound ? 'on' : 'off'"><span></span></span></div></button><button @click="toggleNotificationSound()" class="p-4 rounded-2xl bg-slate-800/60 border border-slate-700 text-left"><div class="flex items-center justify-between"><span class="font-bold text-white">Suara Notifikasi</span><span class="toggle-switch" :class="settingsData.appearance.notificationSound ? 'on' : 'off'"><span></span></span></div></button><button @click="toggleConfetti()" class="p-4 rounded-2xl bg-slate-800/60 border border-slate-700 text-left"><div class="flex items-center justify-between"><span class="font-bold text-white">Efek Confetti</span><span class="toggle-switch" :class="settingsData.appearance.confetti ? 'on' : 'off'"><span></span></span></div></button></div><button @click="saveAppSettings('appearance')" class="app-click px-5 py-3 bg-red-600 text-white rounded-xl font-black text-sm">Simpan Tampilan</button></div>
+<div x-show="settingsPage==='language'" x-cloak class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5"><div><p class="font-black text-white">Bahasa Aplikasi</p><p class="text-xs text-slate-500 mt-1">Pilih bahasa yang digunakan pada antarmuka aplikasi.</p></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><button @click="setLanguage('id')" class="app-click p-5 rounded-2xl border text-left" :class="language==='id' ? 'border-red-500 bg-red-600/10' : 'border-slate-700 bg-slate-800/50'"><div class="flex items-center justify-between"><div><span class="block font-black text-white">🇮🇩 Indonesia</span><span class="text-xs text-slate-500">Bahasa Indonesia</span></div><i x-show="language==='id'" class="fa-solid fa-circle-check text-red-400"></i></div></button><button @click="setLanguage('en')" class="app-click p-5 rounded-2xl border text-left" :class="language==='en' ? 'border-red-500 bg-red-600/10' : 'border-slate-700 bg-slate-800/50'"><div class="flex items-center justify-between"><div><span class="block font-black text-white">🇬🇧 English</span><span class="text-xs text-slate-500">English language</span></div><i x-show="language==='en'" class="fa-solid fa-circle-check text-red-400"></i></div></button></div><button @click="saveAppSettings('language')" class="app-click px-5 py-3 bg-red-600 text-white rounded-xl font-black text-sm">Simpan Bahasa</button></div>
+<div x-show="settingsPage==='notifications'" x-cloak class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-3"><template x-for="item in notificationKeys" :key="item.key"><button @click="settingsData.notifications[item.key]=!settingsData.notifications[item.key]" class="w-full flex items-center justify-between gap-4 p-4 rounded-2xl bg-slate-800/60 border border-slate-700 text-left"><div><p class="font-bold text-white" x-text="item.label"></p><p class="text-xs text-slate-500 mt-1" x-text="item.desc"></p></div><span class="toggle-switch shrink-0" :class="settingsData.notifications[item.key] ? 'on' : 'off'"><span></span></span></button></template><div class="p-4 rounded-2xl bg-cyan-500/10 border border-cyan-500/20"><p class="font-bold text-cyan-300">Status koneksi</p><p class="text-xs text-slate-500 mt-1" x-text="onlineStatus ? 'Perangkat terhubung ke internet.' : 'Perangkat sedang offline. Periksa koneksi sebelum menyimpan data.'"></p></div><button @click="saveAppSettings('notifications')" class="app-click px-5 py-3 bg-red-600 text-white rounded-xl font-black text-sm">Simpan Notifikasi</button></div>
+<div x-show="settingsPage==='security'" x-cloak class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4"><div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20"><p class="font-black text-amber-400">Kontrol Keamanan</p><p class="text-xs text-slate-500 mt-1">Manajemen akun dan pengaturan sensitif tetap khusus Admin.</p></div><label class="flex items-center justify-between gap-4 p-4 rounded-2xl bg-slate-800/60 border border-slate-700"><div><p class="font-bold text-white">Konfirmasi sebelum hapus data</p><p class="text-xs text-slate-500 mt-1">Konfirmasi tambahan sebelum tindakan penghapusan.</p></div><button @click="settingsData.security.confirmDelete=!settingsData.security.confirmDelete" class="toggle-switch" :class="settingsData.security.confirmDelete ? 'on' : 'off'"><span></span></button></label><div class="p-4 rounded-2xl bg-slate-800/60 border border-slate-700"><label class="field-label">Logout otomatis karena tidak aktif</label><select x-model.number="settingsData.security.sessionTimeoutMinutes" class="field-input"><option value="0">Tidak pernah</option><option value="15">15 menit</option><option value="30">30 menit</option><option value="60">60 menit</option><option value="120">120 menit</option></select><p class="text-[11px] text-slate-500 mt-2">Sesi akan keluar otomatis jika tidak ada aktivitas.</p></div><button @click="saveAppSettings('security')" class="app-click px-5 py-3 bg-red-600 text-white rounded-xl font-black text-sm">Simpan Keamanan</button></div>
+<div x-show="settingsPage==='backup'" x-cloak class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl"><div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><button @click="backupData()" class="app-click p-6 rounded-2xl bg-red-600 text-white text-left"><i class="fa-solid fa-download text-2xl"></i><p class="font-black mt-3">Download Backup DB</p></button><label class="app-click p-6 rounded-2xl bg-slate-800 border border-slate-700 text-white text-left cursor-pointer"><i class="fa-solid fa-upload text-2xl"></i><p class="font-black mt-3">Restore Database</p><input type="file" @change="restoreData($event)" accept=".json" class="hidden"></label></div></div>
+<div x-show="settingsPage==='data'" x-cloak class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl"><div class="p-5 rounded-2xl bg-slate-800/60 border border-slate-700"><p class="font-black text-white">Pengelolaan Data</p><p class="text-xs text-slate-500 mt-1">Gunakan Riwayat Transaksi untuk edit/hapus transaksi dan Pengeluaran untuk biaya operasional.</p></div><button @click="activeTab='history'; closeSettingsPage()" class="app-click mt-4 px-5 py-3 bg-slate-800 border border-slate-700 text-white rounded-xl font-bold text-sm">Buka Riwayat Transaksi</button></div></div>
+
+            <!-- HALAMAN MANAJEMEN AKUN -->
             <div x-show="accountPage" x-cloak>
-                <div class="flex items-center justify-between mb-5"><div><p class="text-xs uppercase tracking-widest text-red-400 font-black">Pengaturan / Manajemen Akun</p><h2 class="text-2xl font-black text-white mt-1">Buat Akun Kasir Baru</h2><p class="text-xs text-slate-500 mt-1">Halaman khusus Admin. Akun tersimpan di Firestore dan tersinkron ke perangkat lain.</p></div><button @click="closeAccountPage()" class="app-click px-4 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl text-xs font-bold"><i class="fa-solid fa-arrow-left mr-1"></i> Kembali</button></div>
-                <div x-show="isAdmin()" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl"><div class="flex items-center gap-3 mb-6"><div class="w-12 h-12 rounded-2xl bg-red-600/15 text-red-400 flex items-center justify-center"><i class="fa-solid fa-user-plus text-lg"></i></div><div><h3 class="font-black text-white">Informasi Akun</h3><p class="text-xs text-slate-500">Isi data karyawan dengan benar.</p></div></div><div class="space-y-4"><div><label class="block text-xs font-bold text-slate-400 mb-1">Nama Karyawan</label><input x-model="newUser.name" type="text" placeholder="Contoh: Budi Waruwu" class="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white outline-none focus:ring-2 focus:ring-red-500"></div><div><label class="block text-xs font-bold text-slate-400 mb-1">Username</label><input x-model="newUser.username" type="text" placeholder="contoh: kasir2" class="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white outline-none focus:ring-2 focus:ring-red-500"></div><div><label class="block text-xs font-bold text-slate-400 mb-1">Password</label><input x-model="newUser.password" type="password" placeholder="Buat password" class="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white outline-none focus:ring-2 focus:ring-red-500"></div><div><label class="block text-xs font-bold text-slate-400 mb-1">Hak Akses</label><div class="flex items-center gap-3 rounded-xl bg-slate-800 border border-slate-700 p-4"><div class="w-9 h-9 rounded-lg bg-blue-500/15 text-blue-400 flex items-center justify-center"><i class="fa-solid fa-cash-register"></i></div><div><p class="text-sm font-bold text-white">Kasir / Karyawan</p><p class="text-[10px] text-slate-500">Tidak dapat membuat atau menghapus akun.</p></div><input type="hidden" x-model="newUser.role" value="kasir"></div></div></div><div class="flex flex-col sm:flex-row gap-3 mt-6"><button @click="closeAccountPage()" class="app-click flex-1 py-3 rounded-xl bg-slate-800 text-slate-300 font-bold text-sm">Batal</button><button @click="newUser.role='kasir'; addUser();" class="app-click flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-sm"><i class="fa-solid fa-user-check mr-1"></i> Simpan Akun Kasir</button></div></div>
-                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 h-fit"><p class="text-[10px] uppercase tracking-widest text-slate-500 font-black">Hak Akses</p><div class="mt-4 space-y-3"><div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20"><p class="text-xs font-bold text-emerald-400">ADMIN</p><p class="text-[10px] text-slate-500 mt-1">Buat, edit, dan hapus akun kasir.</p></div><div class="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20"><p class="text-xs font-bold text-blue-400">KASIR</p><p class="text-[10px] text-slate-500 mt-1">Mengelola transaksi, pelanggan, dan laporan. Tidak bisa mengelola akun.</p></div></div></div>
+                <div x-show="!accountCreatePage" x-cloak>
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div><p class="text-xs uppercase tracking-widest text-red-400 font-black">Pengaturan / Manajemen Akun</p><h2 class="text-2xl font-black text-white mt-1">Daftar Akun</h2><p class="text-xs text-slate-500 mt-1">Semua akun tersimpan di Firestore dan tersinkron ke perangkat lain.</p></div>
+                        <div class="flex gap-2"><button @click="closeAccountPage()" class="app-click px-4 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl text-xs font-bold"><i class="fa-solid fa-arrow-left mr-1"></i> Kembali</button><button @click="openAccountCreatePage()" class="app-click px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-black"><i class="fa-solid fa-user-plus mr-1"></i> Buat Akun</button></div>
+                    </div>
+                    <div x-show="isAdmin()" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5"><div class="rounded-2xl bg-slate-900 border border-slate-800 p-5"><p class="text-[10px] uppercase text-slate-500 font-bold">Total Akun</p><p class="text-2xl font-black text-white mt-1" x-text="usersList.length"></p></div><div class="rounded-2xl bg-slate-900 border border-slate-800 p-5"><p class="text-[10px] uppercase text-slate-500 font-bold">Admin</p><p class="text-2xl font-black text-red-400 mt-1" x-text="usersList.filter(u=>u.role==='admin45'||u.role==='admin').length"></p></div><div class="rounded-2xl bg-slate-900 border border-slate-800 p-5"><p class="text-[10px] uppercase text-slate-500 font-bold">Kasir</p><p class="text-2xl font-black text-blue-400 mt-1" x-text="usersList.filter(u=>u.role==='kasir').length"></p></div></div>
+                    <div x-show="isAdmin()" class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                        <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between"><div><h3 class="font-black text-white">Semua Akun</h3><p class="text-[11px] text-slate-500 mt-1">Admin dan kasir yang terdaftar.</p></div><span class="px-3 py-1.5 rounded-full bg-slate-800 text-slate-400 text-[10px] font-bold" x-text="usersList.length + ' akun'"></span></div>
+                        <div class="divide-y divide-slate-800">
+                            <template x-for="(user, index) in usersList" :key="user.firestoreId || user.username">
+                                <div class="p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+                                    <div class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" :class="isAdminUser(user) ? 'bg-red-600/15 text-red-400' : 'bg-blue-500/15 text-blue-400'"><i :class="isAdminUser(user) ? 'fa-solid fa-user-shield' : 'fa-solid fa-cash-register'"></i></div>
+                                    <div class="flex-1 min-w-0"><div class="flex flex-wrap items-center gap-2"><p class="font-black text-white" x-text="user.name || user.username"></p><span class="px-2 py-1 rounded-full text-[9px] font-black uppercase" :class="isAdminUser(user) ? 'bg-red-500/10 text-red-400' : 'bg-blue-500/10 text-blue-400'" x-text="isAdminUser(user) ? 'Admin' : 'Kasir'"></span></div><p class="text-xs text-slate-500 mt-1" x-text="'@' + user.username"></p></div>
+                                    <div class="flex items-center gap-2"><span x-show="user.username === currentUser?.username" class="px-3 py-2 rounded-xl bg-emerald-500/10 text-emerald-400 text-[10px] font-bold">Akun Anda</span><button x-show="!isAdminUser(user) && user.username !== currentUser?.username" @click="openEditUserPage(index)" class="app-click px-3 py-2.5 rounded-xl bg-blue-600/10 border border-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white transition text-xs font-bold"><i class="fa-solid fa-pen mr-1"></i> Edit</button><button x-show="!isAdminUser(user) && user.username !== currentUser?.username" @click="deleteUser(index)" class="app-click px-3 py-2.5 rounded-xl bg-red-600/10 border border-red-600/20 text-red-400 hover:bg-red-600 hover:text-white transition text-xs font-bold"><i class="fa-solid fa-trash mr-1"></i> Hapus</button></div>
+                                </div>
+                            </template>
+                            <div x-show="usersList.length === 0" class="p-10 text-center text-slate-500 text-xs">Belum ada akun yang tersimpan.</div>
+                        </div>
+                    </div>
+                    <div x-show="!isAdmin()" class="bg-slate-900 border border-slate-800 p-8 rounded-2xl text-center"><i class="fa-solid fa-lock text-red-400 text-2xl"></i><p class="font-black text-white mt-3">Akses ditolak</p><p class="text-xs text-slate-500 mt-1">Hanya Admin yang dapat membuka daftar dan mengelola akun.</p></div>
+                </div>
+
+                <div x-show="accountCreatePage" x-cloak>
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5"><div><p class="text-xs uppercase tracking-widest text-red-400 font-black">Pengaturan / Manajemen Akun</p><h2 class="text-2xl font-black text-white mt-1">Buat Akun Kasir Baru</h2><p class="text-xs text-slate-500 mt-1">Halaman khusus Admin. Akun tersimpan di Firestore.</p></div><button @click="closeAccountCreatePage()" class="app-click px-4 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl text-xs font-bold"><i class="fa-solid fa-arrow-left mr-1"></i> Daftar Akun</button></div>
+                    <div x-show="isAdmin()" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl"><div class="flex items-center gap-3 mb-6"><div class="w-12 h-12 rounded-2xl bg-red-600/15 text-red-400 flex items-center justify-center"><i class="fa-solid fa-user-plus text-lg"></i></div><div><h3 class="font-black text-white">Informasi Akun</h3><p class="text-xs text-slate-500">Isi data karyawan dengan benar.</p></div></div><div class="space-y-4"><div><label class="block text-xs font-bold text-slate-400 mb-1">Nama Karyawan</label><input x-model="newUser.name" type="text" placeholder="Contoh: Budi Waruwu" class="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white outline-none focus:ring-2 focus:ring-red-500"></div><div><label class="block text-xs font-bold text-slate-400 mb-1">Username</label><input x-model="newUser.username" type="text" placeholder="contoh: kasir2" class="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white outline-none focus:ring-2 focus:ring-red-500"></div><div><label class="block text-xs font-bold text-slate-400 mb-1">Password</label><div class="relative"><input x-model="newUser.password" :type="showNewUserPassword ? 'text' : 'password'" placeholder="Buat password" class="w-full px-4 py-3 pr-12 rounded-xl bg-slate-800 border border-slate-700 text-white outline-none focus:ring-2 focus:ring-red-500"><button type="button" @click="showNewUserPassword=!showNewUserPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"><i :class="showNewUserPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i></button></div></div><div><label class="block text-xs font-bold text-slate-400 mb-1">Hak Akses</label><div class="flex items-center gap-3 rounded-xl bg-slate-800 border border-slate-700 p-4"><div class="w-9 h-9 rounded-lg bg-blue-500/15 text-blue-400 flex items-center justify-center"><i class="fa-solid fa-cash-register"></i></div><div><p class="text-sm font-bold text-white">Kasir / Karyawan</p><p class="text-[10px] text-slate-500">Tidak dapat membuat atau menghapus akun.</p></div><input type="hidden" x-model="newUser.role" value="kasir"></div></div></div><div class="flex flex-col sm:flex-row gap-3 mt-6"><button @click="closeAccountCreatePage()" class="app-click flex-1 py-3 rounded-xl bg-slate-800 text-slate-300 font-bold text-sm">Batal</button><button @click="newUser.role='kasir'; addUser();" class="app-click flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-sm"><i class="fa-solid fa-user-check mr-1"></i> Simpan Akun Kasir</button></div></div>
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 h-fit"><p class="text-[10px] uppercase tracking-widest text-slate-500 font-black">Hak Akses</p><div class="mt-4 space-y-3"><div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20"><p class="text-xs font-bold text-emerald-400">ADMIN</p><p class="text-[10px] text-slate-500 mt-1">Buat, edit, dan hapus akun kasir.</p></div><div class="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20"><p class="text-xs font-bold text-blue-400">KASIR</p><p class="text-[10px] text-slate-500 mt-1">Mengelola transaksi, pelanggan, dan laporan. Tidak bisa mengelola akun.</p></div></div></div>
+                    </div>
                 </div>
             </div>
-        </div>
+
+            <div x-show="accountEditPage" x-cloak>
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5"><div><p class="text-xs uppercase tracking-widest text-red-400 font-black">Pengaturan / Manajemen Akun</p><h2 class="text-2xl font-black text-white mt-1">Edit Akun Kasir</h2><p class="text-xs text-slate-500 mt-1">Perbarui data akun kasir.</p></div><button @click="closeEditUserPage()" class="app-click px-4 py-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl text-xs font-bold"><i class="fa-solid fa-arrow-left mr-1"></i> Daftar Akun</button></div>
+                <div x-show="isAdmin()" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl max-w-2xl">
+                    <div class="space-y-4"><div><label class="field-label">Nama Karyawan</label><input x-model="editUserForm.name" class="field-input"></div><div><label class="field-label">Username</label><input x-model="editUserForm.username" disabled class="field-input opacity-60 cursor-not-allowed"></div><div><label class="field-label">Password Baru</label><div class="relative"><input x-model="editUserForm.password" :type="showEditUserPassword ? 'text' : 'password'" placeholder="Kosongkan jika tidak ingin mengubah password" class="field-input pr-12"><button type="button" @click="showEditUserPassword=!showEditUserPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"><i :class="showEditUserPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i></button></div></div></div>
+                    <div class="flex flex-col sm:flex-row gap-3 mt-6"><button @click="closeEditUserPage()" class="app-click flex-1 py-3 rounded-xl bg-slate-800 text-slate-300 font-bold text-sm">Batal</button><button @click="saveEditedUser()" class="app-click flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-sm"><i class="fa-solid fa-floppy-disk mr-1"></i> Simpan Perubahan</button></div>
+                </div>
+            </div>
 
     </main>
 
@@ -801,17 +882,18 @@
                 </div>
                 <h3 class="text-lg font-black text-white mt-3">Transaksi Berhasil!</h3>
                 <p class="text-xs text-slate-500 mt-1">Faktur siap dicetak. Setelah selesai, halaman otomatis kembali ke Dashboard.</p>
-                <div class="absolute inset-0 pointer-events-none">
+                <div x-show="settingsData.appearance.confetti" class="absolute inset-0 pointer-events-none">
                     <span class="confetti-piece bg-red-500" style="--x:-70px;--y:65px;left:45%;top:10%"></span><span class="confetti-piece bg-emerald-400" style="--x:75px;--y:55px;left:50%;top:5%;animation-delay:.08s"></span><span class="confetti-piece bg-blue-400" style="--x:-45px;--y:90px;left:52%;top:15%;animation-delay:.16s"></span><span class="confetti-piece bg-yellow-400" style="--x:55px;--y:85px;left:48%;top:12%;animation-delay:.22s"></span>
                 </div>
             </div>
             <div id="receiptPrintArea" class="bg-white text-black p-4 font-mono text-xs leading-tight rounded">
                 <div class="text-center font-bold">
+                    <img x-show="settingsData.invoice.showLogo && settingsData.profile.logoUrl" :src="settingsData.profile.logoUrl" class="w-16 h-16 object-contain mx-auto mb-1 bg-white" referrerpolicy="no-referrer" alt="Logo" @error="$el.style.display='none'; $el.parentElement.insertAdjacentHTML('afterbegin','<div class=\"text-[10px] text-gray-500 mb-1\">Logo tidak dapat dimuat</div>')">
                     <div>========================================</div>
-                    <div class="text-sm">PANGKAS RAMBUT NIAS SUMUT</div>
-                    <div>Pangkas Rambut Waruwu</div>
-                    <div>Jl. Sultan Badaruddin II, Susunan Baru,</div>
-                    <div>Kota Bandar Lampung</div>
+                    <div class="text-sm font-black" x-text="settingsData.invoice.headerTitle || settingsData.profile.name"></div>
+                    <div x-show="settingsData.invoice.headerSubtitle" x-text="settingsData.invoice.headerSubtitle"></div>
+                    <div x-text="settingsData.profile.address || 'Bandar Lampung'"></div>
+                    <div x-show="settingsData.profile.phone" x-text="settingsData.profile.phone"></div>
                     <div>========================================</div>
                 </div>
                 
@@ -824,6 +906,7 @@
                         <div class="mb-1">
                             <span>No  : </span><span x-text="selectedReceipt.invoiceNo"></span>
                         </div>
+                        <div x-show="settingsData.invoice.showCashier" class="mb-1"><span>Kasir : </span><span x-text="selectedReceipt.createdByName || selectedReceipt.cashierName || selectedReceipt.createdBy || 'Kasir'"></span></div>
                         <div>----------------------------------------</div>
                         <div class="flex justify-between font-bold">
                             <span>Item</span>
@@ -849,7 +932,7 @@
                                     <span>Pewarnaan Dasar</span>
                                     <div class="space-x-6">
                                         <span>1</span>
-                                        <span>30.000</span>
+                                        <span x-text="formatNum(prices.CatRambut)"></span>
                                     </div>
                                 </div>
                             </template>
@@ -858,7 +941,7 @@
                                     <span>Pijat Tambahan</span>
                                     <div class="space-x-6">
                                         <span>1</span>
-                                        <span>5.000</span>
+                                        <span x-text="formatNum(prices.Pijat)"></span>
                                     </div>
                                 </div>
                             </template>
@@ -867,9 +950,12 @@
                                     <span>Keramas</span>
                                     <div class="space-x-6">
                                         <span>1</span>
-                                        <span>5.000</span>
+                                        <span x-text="formatNum(prices.Keramas)"></span>
                                     </div>
                                 </div>
+                            </template>
+                            <template x-for="item in (selectedReceipt.additionalServices || [])" :key="item.id">
+                                <div class="flex justify-between"><span x-text="item.name"></span><div class="space-x-6"><span>1</span><span x-text="formatNum(item.price)"></span></div></div>
                             </template>
                         </div>
                         
@@ -888,8 +974,8 @@
                         </div>
                         <div>========================================</div>
                         <div class="text-center font-bold mt-2">
-                            <div>Terima kasih atas kunjungan Anda!</div>
-                            <div>Rambut Rapi, Tampil Penuh Gaya</div>
+                            <div x-text="settingsData.invoice.footer || 'Terima kasih atas kunjungan Anda!'"></div>
+                            <div x-show="settingsData.profile.instagram" x-text="settingsData.profile.instagram"></div>
                         </div>
                         <div class="text-center">========================================</div>
                     </div>
@@ -984,6 +1070,13 @@
     window.fs = { collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, getDocs, setDoc };
 </script>
 
+<script>
+window.BARBER_I18N_EN = {
+  'Pengaturan':'Settings','Dashboard':'Dashboard','Kasir (POS)':'Cashier (POS)','Riwayat Transaksi':'Transaction History','Pelanggan':'Customers','Pengeluaran':'Expenses','Laporan':'Reports','Backup Data':'Backup Data','Manajemen Akun':'Account Management','Buat Akun':'Create Account','Kembali':'Back','Daftar Akun':'Account List','Buat Akun Kasir Baru':'Create Cashier Account','Simpan Akun Kasir':'Save Cashier Account','Batal':'Cancel','Profil Barbershop':'Barbershop Profile','Layanan & Harga':'Services & Prices','Keuangan':'Finance','Pengaturan Faktur':'Invoice Settings','Tampilan & Suara':'Appearance & Sound','Bahasa':'Language','Notifikasi':'Notifications','Keamanan':'Security','Backup & Pemulihan':'Backup & Restore','Pengelolaan Data':'Data Management','Bahasa Aplikasi':'Application Language','Simpan Bahasa':'Save Language','Mode Gelap':'Dark Mode','Mode Terang':'Light Mode','Simpan Tampilan':'Save Appearance','Pengaturan Sistem':'System Settings','Total Akun':'Total Accounts','Admin':'Admin','Kasir':'Cashier','Semua Akun':'All Accounts','Akun Anda':'Your Account','Hapus':'Delete','Buat Akun Baru':'Create New Account','Pilih bahasa yang digunakan pada antarmuka aplikasi.':'Choose the language used by the application interface.','Pengaturan / Manajemen Akun':'Settings / Account Management','Semua akun tersimpan di Firestore dan tersinkron ke perangkat lain.':'All accounts are stored in Firestore and synchronized across devices.','Semua akun tersimpan di Firestore dan tersinkron ke perangkat lain.':'All accounts are stored in Firestore and synchronized across devices.','Informasi Akun':'Account Information','Isi data karyawan dengan benar.':'Enter employee information correctly.','Hak Akses':'Access Role','Tidak dapat membuat atau menghapus akun.':'Cannot create or delete accounts.','Halaman khusus Admin. Akun tersimpan di Firestore.':'Admin-only page. The account is stored in Firestore.','Hanya Admin yang dapat membuka daftar dan mengelola akun.':'Only Admin can open and manage the account list.'
+};
+window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN).map(([id,en])=>[en,id]));
+</script>
+
 <!-- 2. ALPINE APP FUNCTION -->
 <script>
     let chartInstances = {};
@@ -994,6 +1087,16 @@
 
             activeTab: 'dashboard',
             accountPage: false,
+            accountCreatePage: false,
+            accountEditPage: false,
+            editingUser: null,
+            editUserForm: {name:'',username:'',password:'',role:'kasir'},
+            showNewUserPassword: false,
+            showEditUserPassword: false,
+            settingsPage: null,
+            language: localStorage.getItem('barber_language') || 'id',
+            themeLight: localStorage.getItem('barber_theme') === 'light',
+            showDailyTarget: localStorage.getItem('barber_show_target') !== 'false',
             currentUser: null,
             isLoggedIn: false,
             showPassword: false,
@@ -1007,7 +1110,7 @@
             currentTimeStr: '',
             clockInterval: null,
             showEditModal: false,
-            editForm: { firestoreId: '', customerName: '', category: 'Dewasa', hasPijat: false, hasKeramas: false, hasCatRambut: false, payAmount: 0 },
+            editForm: { firestoreId: '', customerName: '', category: 'Dewasa', hasPijat: false, hasKeramas: false, hasCatRambut: false, extraServiceIds: [], payAmount: 0 },
             toast: { visible: false, message: '' },
             toastTimer: null,
             storeIsOpen: localStorage.getItem('barber_store_open') === 'true',
@@ -1016,6 +1119,9 @@
             timerInterval: null,
             timerString: '00:00:00',
             dailyTarget: parseInt(localStorage.getItem('barber_target') || '500000'),
+            settingsData: { language: localStorage.getItem('barber_language') || 'id', profile:{name:'Pangkas Rambut Nias Sumut',phone:'',address:'',openTime:'08:00',closeTime:'21:00',instagram:'',logoUrl:'',description:''}, finance:{ownerPercent:50,staffPercent:50}, invoice:{footer:'Terima kasih telah berkunjung!',prefix:'INV',showCashier:true,headerTitle:'',headerSubtitle:'',showLogo:true}, appearance:{animations:true,successSound:true,notificationSound:true,confetti:true}, notifications:{transaction:true,expense:true,account:true,backup:true,system:true}, security:{confirmDelete:true,sessionTimeoutMinutes:60} },
+            serviceSettingKeys:[{key:'Anak-anak',label:'Pangkas Anak-anak'},{key:'Dewasa',label:'Pangkas Dewasa'},{key:'Pijat',label:'Pijat'},{key:'Keramas',label:'Hairwash / Keramas'},{key:'CatRambut',label:'Cat Rambut'}],
+            notificationKeys:[{key:'transaction',label:'Transaksi Berhasil',desc:'Notifikasi setelah transaksi tersimpan.'},{key:'expense',label:'Pengeluaran',desc:'Notifikasi setelah pengeluaran dicatat.'},{key:'account',label:'Akun',desc:'Notifikasi saat akun dibuat atau dihapus.'},{key:'backup',label:'Backup & Restore',desc:'Notifikasi saat backup selesai.'}],
             searchQuery: '',
             showReceiptModal: false,
             selectedReceipt: null,
@@ -1023,6 +1129,10 @@
             selectedIncomeFilter: 'today',
             historyMonth: 'all',
             audioCtx: null,
+            onlineStatus: navigator.onLine,
+            sessionTimer: null,
+            lastActivityAt: Date.now(),
+            extraServices: [],
 
             prices: {
                 'Anak-anak': 15000,
@@ -1039,6 +1149,7 @@
                 hasPijat: false,
                 hasKeramas: false,
                 hasCatRambut: false,
+                extraServiceIds: [],
                 payAmount: ''
             },
 
@@ -1053,7 +1164,13 @@
             expenses: [],
 
             init() {
+                this.settingsData.language=this.language;
+                this.loadLocalProfileSettings();
                 this.startClock();
+                this.applyTheme();
+                this.setupConnectionMonitor();
+                this.setupActivityMonitor();
+                this.listenAppSettings();
                 if (this.storeIsOpen) this.startTimer();
                 this.updateTimerStr();
 
@@ -1085,11 +1202,40 @@
                 this.clockInterval = setInterval(update, 1000);
             },
 
-            showToast(message) {
+            showToast(message, playSound = false) {
+                const text = String(message || '');
+                let type = 'system';
+                if (/transaksi/i.test(text)) type = 'transaction';
+                else if (/pengeluaran/i.test(text)) type = 'expense';
+                else if (/akun/i.test(text)) type = 'account';
+                else if (/backup|restore/i.test(text)) type = 'backup';
+                if (this.settingsData?.notifications && this.settingsData.notifications[type] === false) return;
                 this.toast.message = message;
                 this.toast.visible = true;
+                if (playSound || (type !== 'transaction' && this.settingsData?.appearance?.notificationSound)) this.playNotificationSound();
                 clearTimeout(this.toastTimer);
                 this.toastTimer = setTimeout(() => { this.toast.visible = false; }, 2800);
+            },
+
+            setupConnectionMonitor() {
+                const update = () => { this.onlineStatus = navigator.onLine; };
+                window.addEventListener('online', update);
+                window.addEventListener('offline', update);
+                update();
+            },
+
+            setupActivityMonitor() {
+                const touch = () => { this.lastActivityAt = Date.now(); };
+                ['click','keydown','mousemove','touchstart','scroll'].forEach(evt => window.addEventListener(evt, touch, { passive: true }));
+                clearInterval(this.sessionTimer);
+                this.sessionTimer = setInterval(() => {
+                    if (!this.isLoggedIn) return;
+                    const mins = Number(this.settingsData.security.sessionTimeoutMinutes) || 0;
+                    if (mins > 0 && Date.now() - this.lastActivityAt >= mins * 60000) {
+                        this.handleLogout(true);
+                        this.showToast('Sesi berakhir karena tidak ada aktivitas. Silakan login kembali.');
+                    }
+                }, 30000);
             },
 
             initAudio() {
@@ -1122,6 +1268,110 @@
                 } catch (e) {}
             },
 
+            playNotificationSound() {
+                if (!this.settingsData?.appearance?.notificationSound) return;
+                try {
+                    const ctx = this.initAudio();
+                    if (!ctx) return;
+                    const start = ctx.currentTime + 0.01;
+                    [880, 1174.66].forEach((freq, i) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, start + i * 0.09);
+                        gain.gain.setValueAtTime(0.0001, start + i * 0.09);
+                        gain.gain.exponentialRampToValueAtTime(0.08, start + i * 0.09 + 0.02);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, start + i * 0.09 + 0.16);
+                        osc.connect(gain).connect(ctx.destination);
+                        osc.start(start + i * 0.09);
+                        osc.stop(start + i * 0.09 + 0.18);
+                    });
+                } catch(e) {}
+            },
+
+            settingsPageTitle(){const id={profile:'Profil Barbershop',services:'Layanan & Harga',finance:'Keuangan',invoice:'Pengaturan Faktur',appearance:'Tampilan & Suara',language:'Bahasa',notifications:'Notifikasi',security:'Keamanan',backup:'Backup & Pemulihan',data:'Pengelolaan Data'};const en={profile:'Barbershop Profile',services:'Services & Prices',finance:'Finance',invoice:'Invoice Settings',appearance:'Appearance & Sound',language:'Language',notifications:'Notifications',security:'Security',backup:'Backup & Restore',data:'Data Management'};return (this.language==='en'?en:id)[this.settingsPage]|| (this.language==='en'?'Settings':'Pengaturan');},
+            settingsPageDescription(){const id={profile:'Informasi usaha yang digunakan di dalam sistem.',services:'Kelola harga layanan tanpa mengubah kode.',finance:'Atur pembagian pendapatan dan target.',invoice:'Atur informasi tambahan pada faktur.',appearance:'Pilih mode terang atau gelap serta efek aplikasi.',language:'Pilih bahasa antarmuka aplikasi.',notifications:'Atur pemberitahuan sistem.',security:'Kelola kontrol keamanan aplikasi.',backup:'Kelola salinan dan pemulihan database.',data:'Kelola akses ke data operasional.'};const en={profile:'Business information used throughout the system.',services:'Manage service prices without changing code.',finance:'Manage revenue sharing and targets.',invoice:'Manage invoice information and messages.',appearance:'Choose light or dark mode, animation and sound.',language:'Choose the application interface language.',notifications:'Manage system notifications.',security:'Manage application security controls.',backup:'Manage database backup and restore.',data:'Manage access to operational data.'};return (this.language==='en'?en:id)[this.settingsPage]||'';},
+            openSettingsPage(page){
+                const adminOnly=['profile','services','finance','invoice','security','backup','data'];
+                if (adminOnly.includes(page) && !this.isAdmin()) { this.showToast('Akses ditolak. Pengaturan ini hanya dapat diakses Admin.'); return; }
+                this.settingsPage=page;this.accountPage=false;this.accountCreatePage=false;window.scrollTo({top:0,behavior:'smooth'});
+            },
+            closeSettingsPage(){this.settingsPage=null;window.scrollTo({top:0,behavior:'smooth'});},
+            applyTheme(){document.body.classList.toggle('reduce-motion',this.settingsData?.appearance?.animations===false);},
+            setTheme(mode){this.themeLight=mode==='light';localStorage.setItem('barber_theme',this.themeLight?'light':'dark');this.saveAppSettings('appearance');},
+            setLanguage(lang){this.language=lang==='en'?'en':'id';this.settingsData.language=this.language;localStorage.setItem('barber_language',this.language);this.applyTranslations();},
+            applyTranslations(){const dict=this.language==='en'?window.BARBER_I18N_EN:window.BARBER_I18N_ID;if(!dict)return;const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);nodes.forEach(n=>{const t=n.nodeValue.trim();if(t && dict[t] && n.parentElement && !['SCRIPT','STYLE'].includes(n.parentElement.tagName))n.nodeValue=n.nodeValue.replace(t,dict[t]);});document.documentElement.lang=this.language;},
+            toggleDailyTarget(){this.showDailyTarget=!this.showDailyTarget;localStorage.setItem('barber_show_target',String(this.showDailyTarget));this.saveAppSettings('target');},
+            toggleAnimation(){this.settingsData.appearance.animations=!this.settingsData.appearance.animations;this.applyTheme();},
+            toggleSuccessSound(){this.settingsData.appearance.successSound=!this.settingsData.appearance.successSound;},
+            toggleNotificationSound(){this.settingsData.appearance.notificationSound=!this.settingsData.appearance.notificationSound;},
+            toggleConfetti(){this.settingsData.appearance.confetti=!this.settingsData.appearance.confetti;},
+            async listenAppSettings(){try{window.fs.onSnapshot(window.fs.doc(window.db,'settings','app_config'),async snap=>{if(snap.exists()){const d=snap.data()||{};for(const k of ['profile','finance','invoice','appearance','notifications','security'])if(d[k])this.settingsData[k]={...this.settingsData[k],...d[k]};if(typeof d.dailyTarget==='number')this.dailyTarget=d.dailyTarget;if(typeof d.showDailyTarget==='boolean')this.showDailyTarget=d.showDailyTarget;if(d.prices)this.prices={...this.prices,...d.prices};if(Array.isArray(d.extraServices))this.extraServices=d.extraServices;if(d.theme)this.themeLight=d.theme==='light';if(d.language)this.language=d.language==='en'?'en':'id';this.settingsData.language=this.language;this.applyTheme();this.applyTranslations();}else await this.persistAppSettings();});}catch(e){console.warn('Pengaturan Firebase belum aktif',e);}},
+            loadLocalProfileSettings(){
+                try{
+                    const raw=localStorage.getItem('barber_profile_cache');
+                    if(raw){
+                        const cached=JSON.parse(raw);
+                        if(cached && typeof cached==='object') this.settingsData.profile={...this.settingsData.profile,...cached};
+                    }
+                }catch(e){ console.warn('Cache profil lokal tidak dapat dibaca',e); }
+            },
+            async persistAppSettings(){
+                try{
+                    await window.fs.setDoc(window.fs.doc(window.db,'settings','app_config'),{...this.settingsData,dailyTarget:this.dailyTarget,showDailyTarget:this.showDailyTarget,prices:this.prices,theme:this.themeLight?'light':'dark',language:this.language,extraServices:this.extraServices,updatedAt:new Date().toISOString()},{merge:true});
+                }catch(e){
+                    console.warn('Gagal menyimpan pengaturan',e);
+                    throw e;
+                }
+            },
+            normalizeLogoUrl(url){
+                const raw=String(url||'').trim();
+                if(!raw)return '';
+                try{
+                    const u=new URL(raw);
+                    const host=u.hostname.toLowerCase();
+                    if(host.includes('drive.google.com')){
+                        const m=raw.match(/(?:id=|\/d\/)([a-zA-Z0-9_-]+)/);
+                        if(m?.[1]) return `https://drive.google.com/uc?export=view&id=${m[1]}`;
+                    }
+                    if(host==='dropbox.com' || host.endsWith('.dropbox.com')){
+                        u.searchParams.set('raw','1');
+                        return u.toString();
+                    }
+                    return u.toString();
+                }catch(e){ return raw; }
+            },
+            async saveAppSettings(){
+                this.settingsData.profile.logoUrl=this.normalizeLogoUrl(this.settingsData.profile.logoUrl);
+                try{
+                    localStorage.setItem('barber_target',String(this.dailyTarget));
+                    localStorage.setItem('barber_show_target',String(this.showDailyTarget));
+                    localStorage.setItem('barber_theme',this.themeLight?'light':'dark');
+                    localStorage.setItem('barber_language',this.language);
+                    localStorage.setItem('barber_profile_cache',JSON.stringify(this.settingsData.profile));
+                    await this.persistAppSettings();
+                    this.applyTranslations();
+                    this.showToast('Pengaturan berhasil disimpan dan tersinkron');
+                }catch(e){
+                    this.applyTranslations();
+                    this.showToast('Gagal menyimpan ke Firebase. Data sementara tetap tersimpan di perangkat.');
+                }
+            },
+            addExtraService(){this.extraServices.push({id:'svc_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),name:'Layanan Baru',price:0,active:true});},
+            removeExtraService(index){if(!confirm('Hapus layanan tambahan ini?'))return;this.extraServices.splice(index,1);this.saveServices();},
+            async saveServices(){
+                this.prices={...this.prices,'Anak-anak':Number(this.prices['Anak-anak'])||0,Dewasa:Number(this.prices.Dewasa)||0,Pijat:Number(this.prices.Pijat)||0,Keramas:Number(this.prices.Keramas)||0,CatRambut:Number(this.prices.CatRambut)||0};
+                this.extraServices=this.extraServices.filter(x=>String(x.name||'').trim()).map(x=>({...x,name:String(x.name).trim(),price:Number(x.price)||0,active:x.active!==false}));
+                await this.persistAppSettings();this.showToast('Layanan dan harga berhasil disimpan');
+            },
+            resetServices(){this.prices={'Anak-anak':15000,Dewasa:20000,None:0,Pijat:5000,Keramas:5000,CatRambut:30000};this.extraServices=[];this.saveServices();},
+            async saveFinanceSettings(){
+                const owner=Math.max(0,Math.min(100,Number(this.settingsData.finance.ownerPercent)||0));
+                const staff=Math.max(0,Math.min(100,Number(this.settingsData.finance.staffPercent)||0));
+                if(owner+staff!==100){this.showToast('Persentase pemilik dan karyawan harus berjumlah 100%');return;}
+                this.settingsData.finance.ownerPercent=owner;this.settingsData.finance.staffPercent=staff;this.dailyTarget=Math.max(0,Number(this.dailyTarget)||0);
+                await this.persistAppSettings();this.showToast('Pengaturan keuangan berhasil disimpan');
+            },
             listenFirestoreData() {
                 window.fs.onSnapshot(window.fs.collection(window.db, "transaksi"), (snapshot) => {
                     let txs = [];
@@ -1220,6 +1470,7 @@
                 if (this.posForm.hasPijat) total += this.prices['Pijat'];
                 if (this.posForm.hasKeramas) total += this.prices['Keramas'];
                 if (this.posForm.hasCatRambut) total += this.prices['CatRambut'];
+                (this.posForm.extraServiceIds || []).forEach(id => { const item=this.extraServices.find(x=>x.id===id); if(item) total += Number(item.price)||0; });
                 return total;
             },
 
@@ -1234,7 +1485,8 @@
                 const yyyy = d.getFullYear();
                 const mm = String(d.getMonth() + 1).padStart(2, '0');
                 const dd = String(d.getDate()).padStart(2, '0');
-                const todayPrefix = `PRN-${yyyy}${mm}${dd}`;
+                const configuredPrefix = String(this.settingsData.invoice.prefix || 'PRN').trim().replace(/[^a-zA-Z0-9_-]/g,'') || 'PRN';
+                const todayPrefix = `${configuredPrefix}-${yyyy}${mm}${dd}`;
                 
                 const todayCount = this.transactions.filter(t => t.invoiceNo && t.invoiceNo.startsWith(todayPrefix)).length + 1;
                 return `#${todayPrefix}${String(todayCount).padStart(2, '0')}`;
@@ -1263,6 +1515,7 @@
                     hasPijat: this.posForm.hasPijat,
                     hasKeramas: this.posForm.hasKeramas,
                     hasCatRambut: this.posForm.hasCatRambut,
+                    additionalServices: (this.posForm.extraServiceIds || []).map(id => { const item=this.extraServices.find(x=>x.id===id); return item ? {id:item.id,name:item.name,price:Number(item.price)||0} : null; }).filter(Boolean),
                     total: Number(total),
                     bayarJumlah: Number(pay),
                     "cap waktu": new Date().toISOString(),
@@ -1270,7 +1523,8 @@
                     category: this.posForm.category,
                     payAmount: Number(pay),
                     timestamp: new Date().toISOString(),
-                    createdBy: this.currentUser?.username || 'unknown'
+                    createdBy: this.currentUser?.username || 'unknown',
+                    createdByName: this.currentUser?.name || this.currentUser?.username || 'Kasir'
                 };
 
                 try {
@@ -1278,13 +1532,14 @@
                     newTx.firestoreId = docRef.id;
                     this.openReceiptModal(newTx);
                     this.showToast('Transaksi berhasil disimpan');
-                    this.playSuccessSound();
+                    if (this.settingsData.appearance.successSound) this.playSuccessSound();
 
                     this.posForm.customerName = '';
                     this.posForm.category = 'Dewasa';
                     this.posForm.hasPijat = false;
                     this.posForm.hasKeramas = false;
                     this.posForm.hasCatRambut = false;
+                    this.posForm.extraServiceIds = [];
                     this.posForm.payAmount = '';
                 } catch (err) {
                     alert("Gagal simpan: " + err.message);
@@ -1372,7 +1627,7 @@
                     await window.fs.addDoc(window.fs.collection(window.db, "expenses"), newExp);
                     this.expenseForm.description = '';
                     this.expenseForm.amount = '';
-                    alert('Pengeluaran berhasil dicatat!');
+                    this.showToast('Pengeluaran berhasil dicatat');
                 } catch (err) {
                     alert("Gagal menyimpan pengeluaran: " + err.message);
                 }
@@ -1383,6 +1638,7 @@
                     try {
                         if (exp.firestoreId) {
                             await window.fs.deleteDoc(window.fs.doc(window.db, "expenses", exp.firestoreId));
+                            this.showToast('Pengeluaran berhasil dihapus');
                         }
                     } catch (err) {
                         alert("Gagal hapus: " + err.message);
@@ -1511,8 +1767,19 @@
                 this.$nextTick(() => this.renderCharts());
             },
 
-            printReceipt() {
+            async printReceipt() {
                 this.initAudio();
+                const area = document.getElementById('receiptPrintArea');
+                if (area) {
+                    const images = Array.from(area.querySelectorAll('img')).filter(img => img.src && img.style.display !== 'none');
+                    await Promise.all(images.map(img => new Promise(resolve => {
+                        if (img.complete && img.naturalWidth > 0) { resolve(); return; }
+                        const done = () => { img.removeEventListener('load', done); img.removeEventListener('error', done); resolve(); };
+                        img.addEventListener('load', done, {once:true});
+                        img.addEventListener('error', done, {once:true});
+                        setTimeout(done, 3000);
+                    })));
+                }
                 const finish = () => {
                     window.removeEventListener('afterprint', finish);
                     setTimeout(() => this.closeReceiptAndReturn(), 250);
@@ -1524,7 +1791,7 @@
                         window.removeEventListener('afterprint', finish);
                         this.closeReceiptAndReturn();
                     }
-                }, 1800);
+                }, 3500);
             },
 
             backupData() {
@@ -1532,7 +1799,11 @@
                     transactions: this.transactions,
                     expenses: this.expenses,
                     users: this.usersList,
-                    dailyTarget: this.dailyTarget
+                    dailyTarget: this.dailyTarget,
+                    appSettings: this.settingsData,
+                    prices: this.prices,
+                    extraServices: this.extraServices,
+                    showDailyTarget: this.showDailyTarget
                 };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
@@ -1545,6 +1816,7 @@
             saveDailyTarget() {
                 this.dailyTarget = Math.max(0, Number(this.dailyTarget) || 0);
                 localStorage.setItem('barber_target', String(this.dailyTarget));
+                this.persistAppSettings();
                 this.showToast('Target omzet berhasil disimpan');
             },
 
@@ -1590,7 +1862,8 @@
                 if (foundUser) {
                     this.isLoggedIn = true;
                     // PERBAIKAN 1: Simpan seluruh object foundUser (agar .role dan .name bisa diakses)
-                    this.currentUser = foundUser; 
+                    this.currentUser = foundUser;
+                    this.lastActivityAt = Date.now();
                     
                     sessionStorage.setItem('loggedInUser', JSON.stringify(foundUser));
                     this.loginInput.username = '';
@@ -1600,8 +1873,9 @@
                 }
             },
 
-            handleLogout() {
+            handleLogout(auto=false) {
                 this.isLoggedIn = false;
+                clearInterval(this.sessionTimer);
                 this.currentUser = null;
                 sessionStorage.removeItem('loggedInUser');
             },
@@ -1616,10 +1890,63 @@
                     return;
                 }
                 this.accountPage = true;
+                this.settingsPage = null;
+                this.accountCreatePage = false;
             },
 
             closeAccountPage() {
                 this.accountPage = false;
+                this.accountCreatePage = false;
+                this.accountEditPage = false;
+                this.editingUser = null;
+            },
+
+            openAccountCreatePage() {
+                if (!this.isAdmin()) {
+                    this.showToast('Akses ditolak. Hanya Admin yang dapat membuat akun.');
+                    return;
+                }
+                this.accountCreatePage = true;
+            },
+
+            closeAccountCreatePage() {
+                this.accountCreatePage = false;
+                this.showNewUserPassword = false;
+            },
+
+            openEditUserPage(index) {
+                if (!this.isAdmin()) { this.showToast('Akses ditolak. Hanya Admin yang dapat mengedit akun.'); return; }
+                const user = this.usersList[index];
+                if (!user || this.isAdminUser(user)) return;
+                this.editingUser = user;
+                this.editUserForm = { name: user.name || '', username: user.username || '', password: '', role: 'kasir' };
+                this.showEditUserPassword = false;
+                this.accountEditPage = true;
+                this.accountCreatePage = false;
+            },
+
+            closeEditUserPage() {
+                this.accountEditPage = false;
+                this.editingUser = null;
+                this.editUserForm = {name:'',username:'',password:'',role:'kasir'};
+                this.showEditUserPassword = false;
+            },
+
+            async saveEditedUser() {
+                if (!this.isAdmin() || !this.editingUser) { this.showToast('Akses ditolak.'); return; }
+                const name = String(this.editUserForm.name || '').trim();
+                if (!name) { this.showToast('Nama karyawan wajib diisi.'); return; }
+                const updated = { ...this.editingUser, name, role: 'kasir' };
+                delete updated.firestoreId;
+                if (String(this.editUserForm.password || '').trim()) updated.password = String(this.editUserForm.password);
+                try {
+                    const docId = this.editingUser.firestoreId || this.userDocId(this.editingUser.username);
+                    await window.fs.setDoc(window.fs.doc(window.db, 'users', docId), updated, {merge:true});
+                    this.showToast('Akun kasir berhasil diperbarui.');
+                    this.closeEditUserPage();
+                } catch (err) {
+                    alert('Gagal memperbarui akun: ' + err.message);
+                }
             },
 
             async addUser() {
@@ -1642,9 +1969,14 @@
                     await window.fs.setDoc(window.fs.doc(window.db, "users", userId), user);
                     this.newUser = { username: '', password: '', name: '', role: 'kasir' };
                     this.showToast('Akun karyawan berhasil dibuat dan disinkronkan');
+                    this.accountCreatePage = false;
                 } catch (err) {
                     alert('Gagal membuat akun: ' + err.message);
                 }
+            },
+
+            isAdminUser(user) {
+                return user?.role === 'admin45' || user?.role === 'admin';
             },
 
             async deleteUser(index) {
@@ -1703,7 +2035,7 @@
             get reportIncomeTotal() { return this.reportTransactions.reduce((s,t) => s + (Number(t.total)||0), 0); },
             get reportExpenseTotal() { return this.reportExpenses.reduce((s,e) => s + (Number(e.amount)||0), 0); },
             get reportBalance() { return this.reportIncomeTotal - this.reportExpenseTotal; },
-            get reportNetTotal() { return this.reportBalance / 2; },
+            get reportNetTotal() { return this.reportBalance * ((Number(this.settingsData.finance.staffPercent) || 50) / 100); },
 
             get reportTransactions() {
                 const now = new Date();
@@ -1728,7 +2060,7 @@
                 const docPdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
                 const periodLabel = { today: 'Hari Ini', month: 'Bulan Ini', all: 'Semua Data' }[this.reportPeriod] || 'Laporan';
                 docPdf.setFontSize(16);
-                docPdf.text('PANGKAS RAMBUT NIAS SUMUT', 14, 14);
+                docPdf.text(this.settingsData.profile.name || 'PANGKAS RAMBUT NIAS SUMUT', 14, 14);
                 docPdf.setFontSize(9);
                 docPdf.text('Laporan Transaksi | ' + periodLabel, 14, 20);
                 docPdf.text('Dicetak: ' + this.getCurrentDateTimeStr() + ' ' + this.currentTimeStr + ' WIB', 14, 25);
@@ -1766,7 +2098,7 @@
                         ['Total Pemasukan', this.formatNum(this.reportIncomeTotal)],
                         ['Total Pengeluaran', this.formatNum(this.reportExpenseTotal)],
                         ['Saldo Setelah Pengeluaran', this.formatNum(this.reportBalance)],
-                        ['TOTAL BERSIH (50%)', this.formatNum(this.reportNetTotal)]
+                        [`TOTAL BERSIH (${Number(this.settingsData.finance.staffPercent)||50}%)`, this.formatNum(this.reportNetTotal)]
                     ],
                     styles:{fontSize:9,cellPadding:2.5}, headStyles:{fillColor:[185,28,28]},
                     didParseCell: data => { if (data.row.index === 3 && data.section === 'body') data.cell.styles.fontStyle = 'bold'; }
@@ -1809,7 +2141,7 @@
                     ['Total Pemasukan', this.reportIncomeTotal],
                     ['Total Pengeluaran', this.reportExpenseTotal],
                     ['Saldo Setelah Pengeluaran', this.reportBalance],
-                    ['TOTAL BERSIH (50%)', this.reportNetTotal]
+                    [`TOTAL BERSIH (${Number(this.settingsData.finance.staffPercent)||50}%)`, this.reportNetTotal]
                 ]);
                 XLSX.utils.book_append_sheet(wb, summary, 'Rekap Keuangan');
                 XLSX.writeFile(wb, `Laporan_Pangkas_Rambut_${this.reportPeriod}_${new Date().toISOString().split('T')[0]}.xlsx`);

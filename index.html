@@ -803,7 +803,7 @@
 <div x-show="settingsPage==='profile'" x-cloak class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
 <div class="p-4 rounded-2xl bg-red-600/10 border border-red-500/20"><p class="text-sm font-black text-red-300">Identitas Usaha</p><p class="text-xs text-slate-500 mt-1">Informasi ini digunakan pada faktur dan identitas aplikasi.</p></div>
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="field-label">Nama Barbershop</label><input x-model="settingsData.profile.name" class="field-input"></div><div><label class="field-label">Nomor WhatsApp</label><input x-model="settingsData.profile.phone" class="field-input" placeholder="08xxxxxxxxxx"></div><div class="md:col-span-2"><label class="field-label">Alamat</label><textarea x-model="settingsData.profile.address" rows="3" class="field-input"></textarea></div><div><label class="field-label">Jam Buka</label><input type="time" x-model="settingsData.profile.openTime" class="field-input"></div><div><label class="field-label">Jam Tutup</label><input type="time" x-model="settingsData.profile.closeTime" class="field-input"></div><div><label class="field-label">Instagram</label><input x-model="settingsData.profile.instagram" class="field-input" placeholder="@namaakun"></div><div><label class="field-label">URL Logo</label><input x-model="settingsData.profile.logoUrl" class="field-input" placeholder="https://.../logo.png"></div><div class="md:col-span-2"><label class="field-label">Deskripsi Singkat</label><textarea x-model="settingsData.profile.description" rows="2" class="field-input" placeholder="Deskripsi usaha..."></textarea></div></div>
-<div x-show="settingsData.profile.logoUrl" class="flex items-center gap-4 p-4 rounded-2xl bg-slate-800/60 border border-slate-700"><div class="w-20 h-20 rounded-xl bg-white border border-slate-700 flex items-center justify-center overflow-hidden shrink-0"><img :src="settingsData.profile.logoUrl" referrerpolicy="no-referrer" class="w-full h-full object-contain p-1" @error="$el.closest('.flex').querySelector('.logo-error').classList.remove('hidden'); $el.classList.add('hidden')"></div><div><p class="text-xs font-bold text-white">Preview Logo</p><p class="text-[11px] text-slate-500 mt-1">Logo yang tampil di sini akan digunakan pada faktur.</p><p class="logo-error hidden text-[11px] text-amber-400 mt-2">Logo tidak dapat dimuat. Periksa URL atau pastikan gambar bisa diakses publik.</p></div></div>
+<div x-show="settingsData.profile.logoUrl" class="flex items-center gap-4 p-4 rounded-2xl bg-slate-800/60 border border-slate-700"><div class="w-20 h-20 rounded-xl bg-white border border-slate-700 flex items-center justify-center overflow-hidden shrink-0"><img :src="settingsData.profile.logoUrl" referrerpolicy="no-referrer" class="w-full h-full object-contain p-1" @error="$el.style.display='none'"></div><div><p class="text-xs font-bold text-white">Preview Logo</p><p class="text-[11px] text-slate-500 mt-1">Logo yang tampil di sini akan digunakan pada faktur.</p><p class="logo-error hidden text-[11px] text-amber-400 mt-2">Logo tidak dapat dimuat. Periksa URL atau pastikan gambar bisa diakses publik.</p></div></div>
 <button @click="saveAppSettings('profile')" class="app-click px-5 py-3 bg-red-600 text-white rounded-xl font-black text-sm">Simpan Profil</button></div>
 <div x-show="settingsPage==='services'" x-cloak class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
 <div><div class="flex items-center justify-between gap-3 mb-3"><div><h3 class="font-black text-white">Layanan Utama</h3><p class="text-xs text-slate-500 mt-1">Harga ini langsung digunakan oleh kasir.</p></div><span class="text-[10px] px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400 font-bold">TERSINKRON</span></div>
@@ -888,7 +888,7 @@
             </div>
             <div id="receiptPrintArea" class="bg-white text-black p-4 font-mono text-xs leading-tight rounded">
                 <div class="text-center font-bold">
-                    <img x-show="settingsData.invoice.showLogo && settingsData.profile.logoUrl" :src="settingsData.profile.logoUrl" class="w-16 h-16 object-contain mx-auto mb-1 bg-white" referrerpolicy="no-referrer" alt="Logo" @error="$el.style.display='none'; $el.parentElement.insertAdjacentHTML('afterbegin','<div class=\"text-[10px] text-gray-500 mb-1\">Logo tidak dapat dimuat</div>')">
+                    <img x-show="settingsData.invoice.showLogo && settingsData.profile.logoUrl" :src="settingsData.profile.logoUrl" class="w-16 h-16 object-contain mx-auto mb-1 bg-white" referrerpolicy="no-referrer" alt="Logo" @error="$el.classList.add('hidden')">
                     <div>========================================</div>
                     <div class="text-sm font-black" x-text="settingsData.invoice.headerTitle || settingsData.profile.name"></div>
                     <div x-show="settingsData.invoice.headerSubtitle" x-text="settingsData.invoice.headerSubtitle"></div>
@@ -1133,6 +1133,7 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
             sessionTimer: null,
             lastActivityAt: Date.now(),
             extraServices: [],
+            firebaseListenersStarted: false,
 
             prices: {
                 'Anak-anak': 15000,
@@ -1170,7 +1171,6 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
                 this.applyTheme();
                 this.setupConnectionMonitor();
                 this.setupActivityMonitor();
-                this.listenAppSettings();
                 if (this.storeIsOpen) this.startTimer();
                 this.updateTimerStr();
 
@@ -1183,8 +1183,10 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
                 }
 
                 const checkFirebase = setInterval(() => {
-                    if (window.fs && window.db) {
+                    if (window.fs && window.db && !this.firebaseListenersStarted) {
+                        this.firebaseListenersStarted = true;
                         clearInterval(checkFirebase);
+                        this.listenAppSettings();
                         this.listenFirestoreData();
                         this.listenUsers();
                     }

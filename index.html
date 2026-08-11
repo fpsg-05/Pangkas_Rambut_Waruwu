@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POS & Dashboard - Pangkas Rambut Nias Sumut</title>
+    <title>Pangkas Rambut Nias Sumut</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -54,8 +54,12 @@
         .app-click:active { transform: scale(.97); }
         .card-hover { transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
         .card-hover:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(0,0,0,.18); }
-        .toast-enter { animation: toastIn .28s ease-out both; }
-        @keyframes toastIn { from { opacity:0; transform:translateY(12px) scale(.98); } to { opacity:1; transform:translateY(0) scale(1); } }
+        .toast-enter { animation: toastIn .32s cubic-bezier(.2,.8,.2,1) both; }
+        @keyframes toastIn { from { opacity:0; transform:translateY(10px) scale(.94); } 70% { opacity:1; transform:translateY(-2px) scale(1.015); } to { opacity:1; transform:translateY(0) scale(1); } }
+        .dialog-backdrop { animation: dialogBackdrop .2s ease-out both; }
+        .dialog-pop { animation: dialogPop .24s cubic-bezier(.2,.8,.2,1) both; }
+        @keyframes dialogBackdrop { from { opacity:0; } to { opacity:1; } }
+        @keyframes dialogPop { from { opacity:0; transform:translateY(10px) scale(.96); } to { opacity:1; transform:translateY(0) scale(1); } }
         .success-pop { animation: successPop .45s cubic-bezier(.2,.8,.2,1) both; }
         @keyframes successPop { 0%{transform:scale(.7);opacity:0} 70%{transform:scale(1.08);opacity:1} 100%{transform:scale(1);opacity:1} }
         .success-ring { animation: successRing .75s cubic-bezier(.2,.8,.2,1) both; }
@@ -92,6 +96,38 @@
         body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{animation:none!important;transition:none!important}
         .field-label{display:block;font-size:.75rem;font-weight:700;color:#94a3b8;margin-bottom:.35rem}.field-input{width:100%;padding:.75rem 1rem;border-radius:.75rem;border:1px solid #334155;background:#1e293b;color:#fff;outline:none}.field-input:focus{box-shadow:0 0 0 2px rgba(239,68,68,.35);border-color:#ef4444}
         .connection-dot{width:8px;height:8px;border-radius:999px;display:inline-block;box-shadow:0 0 0 3px rgba(34,197,94,.08)}.connection-dot.offline{box-shadow:0 0 0 3px rgba(239,68,68,.08)}
+
+        /* =========================================================
+           REPORT PERIOD DROPDOWN
+           Menjaga dropdown laporan tetap terbaca pada Chrome/Edge
+           tanpa mengubah koneksi Firebase atau database.
+           ========================================================= */
+        .report-period-select {
+            color: #ffffff !important;
+            background-color: #0f172a !important;
+            color-scheme: dark;
+            -webkit-appearance: auto;
+            appearance: auto;
+        }
+
+        .report-period-select option {
+            background-color: #0f172a !important;
+            color: #ffffff !important;
+            font-weight: 600;
+        }
+
+        .report-period-select option:checked,
+        .report-period-select option:hover {
+            background-color: #991b1b !important;
+            color: #ffffff !important;
+        }
+
+        /* Fallback untuk browser yang mengabaikan background option. */
+        @supports (-webkit-appearance: none) {
+            .report-period-select {
+                -webkit-text-fill-color: #ffffff;
+            }
+        }
     </style>
 </head>
 <body x-data="barberApp()" :class="themeLight ? 'theme-light' : ''" class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col transition-colors duration-200">
@@ -725,7 +761,7 @@
                     <p class="text-xs text-slate-500 mt-1">Setiap bulan ditampilkan pada tabel terpisah agar data tidak tercampur.</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <select x-model="reportPeriod" class="px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500">
+                    <select x-model="reportPeriod" class="report-period-select px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500" aria-label="Periode laporan">
                         <option value="today">Hari Ini</option>
                         <option value="month">Bulan Ini</option>
                         <option value="all">Semua Bulan</option>
@@ -1007,6 +1043,10 @@
                     <input x-model="editForm.customerName" type="text" class="w-full px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white outline-none focus:ring-2 focus:ring-red-500">
                 </div>
                 <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1">Tanggal & Waktu Transaksi</label>
+                    <input x-model="editForm.timestamp" type="datetime-local" class="w-full px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white outline-none focus:ring-2 focus:ring-red-500">
+                </div>
+                <div>
                     <label class="block text-xs font-bold text-slate-400 mb-1">Kategori</label>
                     <select x-model="editForm.category" class="w-full px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white outline-none focus:ring-2 focus:ring-red-500">
                         <option value="Dewasa">Dewasa</option>
@@ -1035,15 +1075,47 @@
         </div>
     </div>
 
-    <!-- SUCCESS TOAST -->
-    <div x-show="toast.visible" x-cloak class="fixed bottom-5 right-5 z-[70] max-w-sm">
-        <div class="toast-enter bg-slate-900 border border-emerald-500/30 shadow-2xl rounded-2xl p-4 flex items-center gap-3">
-            <div class="success-pop w-10 h-10 rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
-                <i class="fa-solid fa-check"></i>
+    <!-- CENTERED SYSTEM NOTIFICATION -->
+    <div x-show="toast.visible" x-cloak class="fixed inset-0 z-[90] flex items-center justify-center p-4 pointer-events-none" aria-live="polite">
+        <div class="toast-enter w-full max-w-md bg-slate-900/95 backdrop-blur-xl border border-emerald-400/30 shadow-[0_24px_80px_rgba(0,0,0,.45)] rounded-3xl p-5 flex items-center gap-4">
+            <div class="success-pop shrink-0 w-12 h-12 rounded-2xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center ring-1 ring-emerald-400/15">
+                <i class="fa-solid fa-check text-lg"></i>
             </div>
-            <div>
-                <p class="text-xs uppercase tracking-wider text-emerald-400 font-bold">Berhasil</p>
-                <p class="text-sm text-white font-semibold" x-text="toast.message"></p>
+            <div class="min-w-0">
+                <p class="text-[11px] uppercase tracking-[.16em] text-emerald-400 font-black">Berhasil</p>
+                <p class="text-sm sm:text-base text-white font-bold leading-snug mt-0.5" x-text="toast.message"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROFESSIONAL CENTERED DIALOG -->
+    <div x-show="dialog.visible" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" :aria-labelledby="'dialog-title'">
+        <div class="dialog-backdrop absolute inset-0 bg-slate-950/75 backdrop-blur-sm" @click="dialog.type === 'info' ? closeDialog() : null"></div>
+        <div class="dialog-pop relative w-full max-w-md bg-slate-900 border border-slate-700/80 rounded-3xl shadow-[0_28px_100px_rgba(0,0,0,.55)] overflow-hidden">
+            <div class="p-6">
+                <div class="flex items-start gap-4">
+                    <div class="shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center" :class="dialog.tone === 'danger' ? 'bg-red-500/15 text-red-400' : dialog.tone === 'warning' ? 'bg-amber-500/15 text-amber-400' : 'bg-blue-500/15 text-blue-400'">
+                        <i class="fa-solid" :class="dialog.icon"></i>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <p class="text-[10px] uppercase tracking-[.16em] font-black" :class="dialog.tone === 'danger' ? 'text-red-400' : dialog.tone === 'warning' ? 'text-amber-400' : 'text-blue-400'" x-text="dialog.type === 'confirm' ? 'Konfirmasi Tindakan' : 'Pemberitahuan'"></p>
+                                <h3 id="dialog-title" class="text-lg sm:text-xl font-black text-white mt-1" x-text="dialog.title"></h3>
+                            </div>
+                            <button @click="closeDialog()" class="app-click shrink-0 w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center" aria-label="Tutup">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                        <p class="text-sm text-slate-400 leading-relaxed mt-3" x-text="dialog.message"></p>
+                    </div>
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <button x-show="dialog.type === 'confirm'" @click="closeDialog()" class="app-click flex-1 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-sm">
+                        <i class="fa-solid fa-arrow-left mr-1"></i> Batal
+                    </button>
+                    <button @click="dialogConfirm()" class="app-click flex-1 py-3 rounded-xl font-black text-sm text-white" :class="dialog.tone === 'danger' ? 'bg-red-600 hover:bg-red-700' : dialog.tone === 'warning' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-blue-600 hover:bg-blue-700'" x-text="dialog.confirmText"></button>
+                </div>
             </div>
         </div>
     </div>
@@ -1113,6 +1185,7 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
             editForm: { firestoreId: '', customerName: '', category: 'Dewasa', hasPijat: false, hasKeramas: false, hasCatRambut: false, extraServiceIds: [], payAmount: 0 },
             toast: { visible: false, message: '' },
             toastTimer: null,
+            dialog: { visible: false, type: 'info', title: '', message: '', confirmText: 'Mengerti', icon: 'fa-circle-info', tone: 'info', action: null },
             storeIsOpen: localStorage.getItem('barber_store_open') === 'true',
             openTimeStr: localStorage.getItem('barber_open_time') || '',
             timerSeconds: parseInt(localStorage.getItem('barber_timer_sec') || '0'),
@@ -1217,6 +1290,29 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
                 if (playSound || (type !== 'transaction' && this.settingsData?.appearance?.notificationSound)) this.playNotificationSound();
                 clearTimeout(this.toastTimer);
                 this.toastTimer = setTimeout(() => { this.toast.visible = false; }, 2800);
+            },
+
+            openDialog({type='info', title='Pemberitahuan', message='', confirmText='Mengerti', icon='fa-circle-info', tone='info', action=null} = {}) {
+                this.dialog = { visible:true, type, title, message, confirmText, icon, tone, action };
+            },
+
+            closeDialog() {
+                this.dialog.visible = false;
+                this.dialog.action = null;
+            },
+
+            async dialogConfirm() {
+                const action = this.dialog.action;
+                this.closeDialog();
+                if (typeof action === 'function') await action();
+            },
+
+            showInfo(message, title='Pemberitahuan', tone='info') {
+                this.openDialog({type:'info', title, message, confirmText:'Mengerti', icon:tone==='warning'?'fa-triangle-exclamation':'fa-circle-info', tone});
+            },
+
+            askConfirmation(message, action, title='Apakah Anda yakin?', confirmText='Yakin, Lanjutkan', tone='danger') {
+                this.openDialog({type:'confirm', title, message, confirmText, icon:tone==='danger'?'fa-trash-can':'fa-circle-question', tone, action});
             },
 
             setupConnectionMonitor() {
@@ -1360,7 +1456,7 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
                 }
             },
             addExtraService(){this.extraServices.push({id:'svc_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),name:'Layanan Baru',price:0,active:true});},
-            removeExtraService(index){if(!confirm('Hapus layanan tambahan ini?'))return;this.extraServices.splice(index,1);this.saveServices();},
+            removeExtraService(index){this.askConfirmation('Layanan tambahan ini akan dihapus dari daftar layanan. Tindakan ini tidak dapat dibatalkan.',()=>{this.extraServices.splice(index,1);this.saveServices();},'Hapus Layanan Tambahan?','Hapus Layanan');},
             async saveServices(){
                 this.prices={...this.prices,'Anak-anak':Number(this.prices['Anak-anak'])||0,Dewasa:Number(this.prices.Dewasa)||0,Pijat:Number(this.prices.Pijat)||0,Keramas:Number(this.prices.Keramas)||0,CatRambut:Number(this.prices.CatRambut)||0};
                 this.extraServices=this.extraServices.filter(x=>String(x.name||'').trim()).map(x=>({...x,name:String(x.name).trim(),price:Number(x.price)||0,active:x.active!==false}));
@@ -1553,6 +1649,7 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
                     firestoreId: tx.firestoreId,
                     customerName: tx.customerName || 'Pelanggan',
                     category: tx.category || 'Dewasa',
+                    timestamp: this.formatDateTimeLocalInput(tx.timestamp),
                     hasPijat: !!tx.hasPijat,
                     hasKeramas: !!tx.hasKeramas,
                     hasCatRambut: !!tx.hasCatRambut,
@@ -1572,9 +1669,12 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
             async updateTransaction() {
                 const total = this.calculateEditTotal();
                 const pay = Number(this.editForm.payAmount) || 0;
-                if (!this.editForm.firestoreId) return alert('ID transaksi tidak ditemukan.');
-                if (total <= 0) return alert('Pilih minimal satu layanan.');
-                if (pay < total) return alert('Uang diterima tidak boleh kurang dari total.');
+                if (!this.editForm.firestoreId) { this.showInfo('ID transaksi tidak ditemukan.', 'Transaksi Tidak Ditemukan', 'warning'); return; }
+                if (total <= 0) { this.showInfo('Pilih minimal satu layanan sebelum menyimpan perubahan.', 'Layanan Belum Dipilih', 'warning'); return; }
+                if (pay < total) { this.showInfo('Uang diterima tidak boleh kurang dari total transaksi.', 'Pembayaran Tidak Valid', 'warning'); return; }
+                if (!this.editForm.timestamp) { this.showInfo('Tanggal dan waktu transaksi wajib diisi.', 'Tanggal Belum Diisi', 'warning'); return; }
+                const editedDate = new Date(this.editForm.timestamp);
+                if (Number.isNaN(editedDate.getTime())) { this.showInfo('Tanggal dan waktu transaksi tidak valid.', 'Tanggal Tidak Valid', 'warning'); return; }
 
                 const update = {
                     customerName: (this.editForm.customerName || 'Pelanggan').trim(),
@@ -1584,6 +1684,7 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
                     hasKeramas: !!this.editForm.hasKeramas,
                     hasCatRambut: !!this.editForm.hasCatRambut,
                     total,
+                    timestamp: editedDate.toISOString(),
                     bayarJumlah: pay,
                     payAmount: pay,
                     updatedAt: new Date().toISOString(),
@@ -1595,25 +1696,25 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
                     this.showEditModal = false;
                     this.showToast('Data transaksi berhasil diperbarui');
                 } catch (err) {
-                    alert('Gagal memperbarui transaksi: ' + err.message);
+                    this.showInfo('Gagal memperbarui transaksi: ' + err.message, 'Pembaruan Gagal', 'warning');
                 }
             },
 
             async deleteTransaction(tx) {
-                if (!tx?.firestoreId) return alert('ID transaksi tidak ditemukan.');
-                if (confirm(`Hapus transaksi ${tx.invoiceNo || ''}? Data akan terhapus dari database.`)) {
+                if (!tx?.firestoreId) { this.showInfo('ID transaksi tidak ditemukan.', 'Transaksi Tidak Ditemukan', 'warning'); return; }
+                this.askConfirmation(`Transaksi ${tx.invoiceNo || ''} akan dihapus permanen dari database. Data yang sudah dihapus tidak dapat dikembalikan.`, async () => {
                     try {
                         await window.fs.deleteDoc(window.fs.doc(window.db, "transaksi", tx.firestoreId));
                         this.showToast('Transaksi berhasil dihapus');
                     } catch (err) {
-                        alert("Gagal hapus: " + err.message);
+                        this.showInfo('Gagal menghapus transaksi: ' + err.message, 'Penghapusan Gagal', 'warning');
                     }
-                }
+                }, 'Hapus Transaksi?', 'Hapus Transaksi');
             },
 
             async saveExpense() {
                 if (!this.expenseForm.amount) {
-                    alert('Masukkan nominal pengeluaran!');
+                    this.showInfo('Masukkan nominal pengeluaran sebelum menyimpan.', 'Nominal Belum Diisi', 'warning');
                     return;
                 }
 
@@ -1631,21 +1732,21 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
                     this.expenseForm.amount = '';
                     this.showToast('Pengeluaran berhasil dicatat');
                 } catch (err) {
-                    alert("Gagal menyimpan pengeluaran: " + err.message);
+                    this.showInfo('Gagal menyimpan pengeluaran: ' + err.message, 'Pengeluaran Gagal Disimpan', 'warning');
                 }
             },
 
             async deleteExpense(exp) {
-                if (confirm('Hapus pengeluaran ini?')) {
+                this.askConfirmation('Data pengeluaran ini akan dihapus permanen dari database. Pastikan data yang dipilih sudah benar.', async () => {
                     try {
                         if (exp.firestoreId) {
                             await window.fs.deleteDoc(window.fs.doc(window.db, "expenses", exp.firestoreId));
                             this.showToast('Pengeluaran berhasil dihapus');
                         }
                     } catch (err) {
-                        alert("Gagal hapus: " + err.message);
+                        this.showInfo('Gagal menghapus pengeluaran: ' + err.message, 'Penghapusan Gagal', 'warning');
                     }
-                }
+                }, 'Hapus Pengeluaran?', 'Hapus Pengeluaran');
             },
 
             get filteredTransactions() {
@@ -1730,6 +1831,14 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
                 if (!isoStr) return '';
                 const d = new Date(isoStr);
                 return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            },
+
+            formatDateTimeLocalInput(isoStr) {
+                if (!isoStr) return '';
+                const d = new Date(isoStr);
+                if (Number.isNaN(d.getTime())) return '';
+                const pad = n => String(n).padStart(2, '0');
+                return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
             },
 
             formatDateStr(dateStr) {
@@ -1828,30 +1937,35 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
                 try {
                     const raw = await file.text();
                     const data = JSON.parse(raw);
-                    if (!confirm('Restore akan menambahkan data backup ke database. Lanjutkan?')) return;
-
-                    if (Array.isArray(data.transactions)) {
-                        for (const tx of data.transactions) {
-                            const copy = { ...tx };
-                            delete copy.firestoreId;
-                            await window.fs.addDoc(window.fs.collection(window.db, "transaksi"), copy);
+                    this.askConfirmation('Restore akan menambahkan data backup ke database. Pastikan file backup berasal dari sistem ini dan data yang ada sudah dipahami sebelum melanjutkan.', async () => {
+                        try {
+                            if (Array.isArray(data.transactions)) {
+                                for (const tx of data.transactions) {
+                                    const copy = { ...tx };
+                                    delete copy.firestoreId;
+                                    await window.fs.addDoc(window.fs.collection(window.db, "transaksi"), copy);
+                                }
+                            }
+                            if (Array.isArray(data.expenses)) {
+                                for (const exp of data.expenses) {
+                                    const copy = { ...exp };
+                                    delete copy.firestoreId;
+                                    await window.fs.addDoc(window.fs.collection(window.db, "expenses"), copy);
+                                }
+                            }
+                            if (typeof data.dailyTarget === 'number') {
+                                this.dailyTarget = data.dailyTarget;
+                                localStorage.setItem('barber_target', String(data.dailyTarget));
+                            }
+                            this.showToast('Restore database berhasil');
+                        } catch (err) {
+                            this.showInfo('Restore gagal: ' + err.message, 'Restore Gagal', 'warning');
+                        } finally {
+                            if (event?.target) event.target.value = '';
                         }
-                    }
-                    if (Array.isArray(data.expenses)) {
-                        for (const exp of data.expenses) {
-                            const copy = { ...exp };
-                            delete copy.firestoreId;
-                            await window.fs.addDoc(window.fs.collection(window.db, "expenses"), copy);
-                        }
-                    }
-                    if (typeof data.dailyTarget === 'number') {
-                        this.dailyTarget = data.dailyTarget;
-                        localStorage.setItem('barber_target', String(data.dailyTarget));
-                    }
-                    this.showToast('Restore database berhasil');
+                    }, 'Konfirmasi Restore Database', 'Restore Database', 'warning');
                 } catch (err) {
-                    alert('Restore gagal: ' + err.message);
-                } finally {
+                    this.showInfo('File backup tidak valid: ' + err.message, 'File Backup Tidak Valid', 'warning');
                     if (event?.target) event.target.value = '';
                 }
             },
@@ -1871,7 +1985,7 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
                     this.loginInput.username = '';
                     this.loginInput.password = '';
                 } else {
-                    alert('Username atau Password salah!');
+                    this.showInfo('Username atau password yang dimasukkan tidak sesuai. Silakan periksa kembali data login Anda.', 'Login Gagal', 'warning');
                 }
             },
 
@@ -1947,22 +2061,22 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
                     this.showToast('Akun kasir berhasil diperbarui.');
                     this.closeEditUserPage();
                 } catch (err) {
-                    alert('Gagal memperbarui akun: ' + err.message);
+                    this.showInfo('Gagal memperbarui akun: ' + err.message, 'Pembaruan Akun Gagal', 'warning');
                 }
             },
 
             async addUser() {
                 if (!this.isAdmin()) {
-                    alert('Akses ditolak! Hanya Admin yang boleh menambah akun.');
+                    this.showInfo('Hanya Admin yang boleh menambah akun kasir atau karyawan.', 'Akses Ditolak', 'warning');
                     return;
                 }
                 if (!this.newUser.username || !this.newUser.password || !this.newUser.name) {
-                    alert('Harap isi semua kolom!');
+                    this.showInfo('Nama, username, dan password wajib diisi sebelum akun dibuat.', 'Data Belum Lengkap', 'warning');
                     return;
                 }
                 const username = this.newUser.username.trim();
                 if (this.usersList.some(u => u.username.toLowerCase() === username.toLowerCase())) {
-                    alert('Username sudah digunakan.');
+                    this.showInfo('Username tersebut sudah digunakan. Silakan pilih username lain.', 'Username Sudah Digunakan', 'warning');
                     return;
                 }
                 const user = { ...this.newUser, username, role: 'kasir' };
@@ -1973,7 +2087,7 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
                     this.showToast('Akun karyawan berhasil dibuat dan disinkronkan');
                     this.accountCreatePage = false;
                 } catch (err) {
-                    alert('Gagal membuat akun: ' + err.message);
+                    this.showInfo('Gagal membuat akun: ' + err.message, 'Pembuatan Akun Gagal', 'warning');
                 }
             },
 
@@ -1983,23 +2097,23 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
 
             async deleteUser(index) {
                 if (!this.isAdmin()) {
-                    alert('Akses ditolak! Hanya Admin yang boleh menghapus akun.');
+                    this.showInfo('Hanya Admin yang memiliki izin untuk menghapus akun.', 'Akses Ditolak', 'warning');
                     return;
                 }
                 const user = this.usersList[index];
                 if (!user) return;
                 if (user.username === this.currentUser?.username) {
-                    alert('Anda tidak bisa menghapus akun yang sedang digunakan.');
+                    this.showInfo('Akun yang sedang digunakan tidak dapat dihapus.', 'Aksi Tidak Diizinkan', 'warning');
                     return;
                 }
-                if (confirm('Yakin ingin menghapus akun ini?')) {
+                this.askConfirmation(`Akun ${user.name || user.username} (${user.username}) akan dihapus permanen.`, async () => {
                     try {
                         await window.fs.deleteDoc(window.fs.doc(window.db, "users", user.firestoreId || this.userDocId(user.username)));
                         this.showToast('Akun berhasil dihapus');
                     } catch (err) {
-                        alert('Gagal menghapus akun: ' + err.message);
+                        this.showInfo('Gagal menghapus akun: ' + err.message, 'Penghapusan Gagal', 'warning');
                     }
-                }
+                }, 'Hapus Akun?', 'Hapus Akun');
             },
 
             get reportMonthKeys() {

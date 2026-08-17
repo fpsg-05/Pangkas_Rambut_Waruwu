@@ -774,8 +774,8 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 card-hover"><p class="text-[10px] uppercase font-black tracking-widest text-slate-500">Total Pemasukan</p><p class="text-2xl font-black text-emerald-400 mt-2" x-text="formatRupiah(reportIncomeTotal)"></p><p class="text-[10px] text-slate-500 mt-1">Semua transaksi pada periode terpilih</p></div>
                 <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 card-hover"><p class="text-[10px] uppercase font-black tracking-widest text-slate-500">Total Pengeluaran</p><p class="text-2xl font-black text-red-400 mt-2" x-text="formatRupiah(reportExpenseTotal)"></p><p class="text-[10px] text-slate-500 mt-1">Dikurangkan langsung dari pemasukan</p></div>
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 card-hover"><p class="text-[10px] uppercase font-black tracking-widest text-slate-500">Saldo Setelah Pengeluaran</p><p class="text-2xl font-black text-blue-400 mt-2" x-text="formatRupiah(reportBalance)"></p><p class="text-[10px] text-slate-500 mt-1">Pemasukan - pengeluaran</p></div>
-                <div class="bg-slate-900 border border-red-600/40 rounded-2xl p-5 card-hover relative overflow-hidden"><span class="absolute top-0 right-0 bg-red-600 text-[9px] font-black px-2 py-1 rounded-bl-xl" x-text="(Number(settingsData.finance.staffPercent)||50)+'% BAGI HASIL'"></span><p class="text-[10px] uppercase font-black tracking-widest text-red-400">Total Bersih</p><p class="text-2xl font-black text-white mt-2" x-text="formatRupiah(reportNetTotal)"></p><p class="text-[10px] text-slate-500 mt-1" x-text="`(Pemasukan - Pengeluaran) × ${Number(settingsData.finance.staffPercent)||50}%`"></p></div>
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 card-hover"><p class="text-[10px] uppercase font-black tracking-widest text-slate-500">Bagian Usaha</p><p class="text-2xl font-black text-blue-400 mt-2" x-text="formatRupiah(reportOwnerShare)"></p><p class="text-[10px] text-slate-500 mt-1" x-text="`${Number(settingsData.finance.ownerPercent)||50}% dari pemasukan`"></p></div>
+                <div class="bg-slate-900 border border-red-600/40 rounded-2xl p-5 card-hover relative overflow-hidden"><span class="absolute top-0 right-0 bg-red-600 text-[9px] font-black px-2 py-1 rounded-bl-xl">BERSIH</span><p class="text-[10px] uppercase font-black tracking-widest text-red-400">Total Bersih</p><p class="text-2xl font-black text-white mt-2" x-text="formatRupiah(reportNetTotal)"></p><p class="text-[10px] text-slate-500 mt-1">Bagian usaha - pengeluaran</p></div>
             </div>
 
             <div class="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
@@ -784,6 +784,40 @@
                     <div class="text-xs text-slate-400"><span class="text-emerald-400 font-bold" x-text="reportTransactions.length"></span> transaksi</div>
                 </div>
                 <div class="p-5 space-y-5">
+                    <div class="rounded-2xl border border-red-500/30 bg-slate-950 overflow-hidden">
+                        <div class="px-5 py-4 bg-red-600 text-white flex items-center justify-between">
+                            <div><h3 class="font-black">REKAP KEUANGAN</h3><p class="text-xs text-red-100 mt-1">Pembagian pendapatan dan hasil bersih periode terpilih.</p></div>
+                            <span class="text-xs font-bold" x-text="reportPeriod === 'today' ? 'Hari Ini' : (reportPeriod === 'month' ? 'Bulan Ini' : 'Semua Data')"></span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead class="bg-slate-800 text-slate-300"><tr><th class="px-5 py-3 text-left">Keterangan</th><th class="px-5 py-3 text-right">Nominal</th></tr></thead>
+                                <tbody class="divide-y divide-slate-800">
+                                    <tr><td class="px-5 py-3 font-bold text-white">PEMASUKAN</td><td class="px-5 py-3 text-right"></td></tr>
+                                    <tr><td class="px-5 py-3 text-slate-300">Jumlah Pemasukan</td><td class="px-5 py-3 text-right font-bold text-emerald-400" x-text="formatRupiah(reportIncomeTotal)"></td></tr>
+                                    <tr><td class="px-5 py-3 text-slate-300" x-text="`Bagian Karyawan (${Number(settingsData.finance.staffPercent)||50}%)`"></td><td class="px-5 py-3 text-right text-slate-300" x-text="formatRupiah(reportStaffShare)"></td></tr>
+                                    <tr><td class="px-5 py-3 font-bold text-white" x-text="`Bagian Usaha (${Number(settingsData.finance.ownerPercent)||50}%)`"></td><td class="px-5 py-3 text-right font-bold text-blue-400" x-text="formatRupiah(reportOwnerShare)"></td></tr>
+                                    <tr><td class="px-5 py-3 font-bold text-white">PENGELUARAN</td><td class="px-5 py-3 text-right"></td></tr>
+                                    <tr><td class="px-5 py-3 text-slate-300">Jumlah Pengeluaran</td><td class="px-5 py-3 text-right font-bold text-red-400" x-text="formatRupiah(reportExpenseTotal)"></td></tr>
+                                    <tr class="bg-red-600/10"><td class="px-5 py-4 font-black text-white">TOTAL BERSIH</td><td class="px-5 py-4 text-right font-black text-emerald-400 text-lg" x-text="formatRupiah(reportNetTotal)"></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="rounded-2xl border border-slate-800 overflow-hidden">
+                        <div class="px-5 py-4 bg-slate-800/70 flex items-center justify-between"><div><h3 class="font-black text-white">TABEL PENGELUARAN</h3><p class="text-xs text-slate-500 mt-1">Rincian pengeluaran yang dikurangkan dari bagian usaha.</p></div><span class="text-xs font-bold text-red-400" x-text="formatRupiah(reportExpenseTotal)"></span></div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead class="bg-slate-800 text-slate-400 text-xs uppercase"><tr><th class="px-4 py-3 text-left">No</th><th class="px-4 py-3 text-left">Tanggal</th><th class="px-4 py-3 text-left">Kategori</th><th class="px-4 py-3 text-left">Keterangan</th><th class="px-4 py-3 text-right">Nominal</th></tr></thead>
+                                <tbody class="divide-y divide-slate-800">
+                                    <template x-for="(e,i) in reportExpenses" :key="'report-expense-'+(e.id||i)"><tr class="hover:bg-slate-800/40"><td class="px-4 py-3 text-slate-500" x-text="i+1"></td><td class="px-4 py-3 text-slate-300 whitespace-nowrap" x-text="formatDateStr(e.date)"></td><td class="px-4 py-3 text-slate-300" x-text="e.category || '-'" ></td><td class="px-4 py-3 text-slate-300" x-text="e.description || '-'" ></td><td class="px-4 py-3 text-right font-bold text-red-400" x-text="formatRupiah(e.amount)"></td></tr></template>
+                                    <template x-if="reportExpenses.length === 0"><tr><td colspan="5" class="px-4 py-8 text-center text-slate-500">Tidak ada pengeluaran pada periode ini.</td></tr></template>
+                                </tbody>
+                                <tfoot><tr class="bg-slate-800/60"><td colspan="4" class="px-4 py-3 text-right font-black text-white">TOTAL PENGELUARAN</td><td class="px-4 py-3 text-right font-black text-red-400" x-text="formatRupiah(reportExpenseTotal)"></td></tr></tfoot>
+                            </table>
+                        </div>
+                    </div>
                     <template x-if="reportPeriod !== 'all'">
                         <div class="rounded-xl border border-slate-800 overflow-hidden">
                             <div class="px-4 py-3 bg-slate-800/60 flex items-center justify-between"><span class="font-bold text-white" x-text="reportPeriod === 'today' ? 'Hari Ini' : monthLabel(`${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`)"></span><span class="text-xs text-slate-400" x-text="formatRupiah(reportIncomeTotal)"></span></div>
@@ -851,7 +885,7 @@
 <div class="flex items-center justify-between gap-4 p-4 rounded-2xl bg-slate-800/60 border border-slate-700"><div><p class="font-black text-white">Tampilkan Target Pendapatan</p><p class="text-xs text-slate-500 mt-1">Jika OFF, target tidak ditampilkan di Dashboard dan sidebar. Nilainya tetap tersimpan.</p></div><button @click="toggleDailyTarget()" class="toggle-switch shrink-0" :class="showDailyTarget ? 'on' : 'off'"><span></span></button></div>
 <div x-show="showDailyTarget" x-transition class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="field-label">Target Omzet Harian (Rp)</label><input type="number" min="0" x-model.number="dailyTarget" class="field-input font-mono"></div><div class="p-4 rounded-xl bg-red-600/10 border border-red-500/20"><p class="text-xs font-bold text-red-300">Preview Target</p><p class="text-xl font-black text-white mt-1" x-text="formatRupiah(dailyTarget)"></p></div></div>
 <div class="border-t border-slate-800 pt-5"><h3 class="font-black text-white mb-3">Pembagian Pendapatan</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="field-label">Bagian Pemilik (%)</label><input type="number" min="0" max="100" x-model.number="settingsData.finance.ownerPercent" class="field-input"></div><div><label class="field-label">Bagian Karyawan (%)</label><input type="number" min="0" max="100" x-model.number="settingsData.finance.staffPercent" class="field-input"></div></div><p class="text-xs mt-3" :class="Number(settingsData.finance.ownerPercent)+Number(settingsData.finance.staffPercent)===100?'text-emerald-400':'text-amber-400'" x-text="`Total pembagian: ${Number(settingsData.finance.ownerPercent||0)+Number(settingsData.finance.staffPercent||0)}%`"></p></div>
-<div class="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20"><p class="text-sm font-black text-emerald-400">Rumus Rekap Bersih</p><p class="text-xs text-slate-400 mt-1">(Total Pemasukan - Total Pengeluaran) × persentase bagian karyawan.</p><p class="text-xs text-slate-500 mt-2">Pastikan persentase Pemilik + Karyawan = 100%.</p></div>
+<div class="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20"><p class="text-sm font-black text-emerald-400">Rumus Rekap Bersih</p><p class="text-xs text-slate-400 mt-1">Bagian Usaha = Total Pemasukan × persentase Pemilik. Total Bersih = Bagian Usaha - Total Pengeluaran.</p><p class="text-xs text-slate-500 mt-2">Pastikan persentase Pemilik + Karyawan = 100%.</p></div>
 <button @click="saveFinanceSettings()" class="app-click px-5 py-3 bg-red-600 text-white rounded-xl font-black text-sm">Simpan Keuangan</button></div>
 <div x-show="settingsPage==='invoice'" x-cloak class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
 <div class="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20"><p class="text-sm font-black text-purple-300">Header Faktur</p><p class="text-xs text-slate-500 mt-1">Atur judul dan informasi yang tampil di bagian atas faktur.</p></div>
@@ -1685,7 +1719,6 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
                     hasCatRambut: !!this.editForm.hasCatRambut,
                     total,
                     timestamp: editedDate.toISOString(),
-                    "cap waktu": editedDate.toISOString(),
                     bayarJumlah: pay,
                     payAmount: pay,
                     updatedAt: new Date().toISOString(),
@@ -2151,8 +2184,10 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
 
             get reportIncomeTotal() { return this.reportTransactions.reduce((s,t) => s + (Number(t.total)||0), 0); },
             get reportExpenseTotal() { return this.reportExpenses.reduce((s,e) => s + (Number(e.amount)||0), 0); },
+            get reportStaffShare() { return this.reportIncomeTotal * ((Number(this.settingsData.finance.staffPercent) || 50) / 100); },
+            get reportOwnerShare() { return this.reportIncomeTotal * ((Number(this.settingsData.finance.ownerPercent) || 50) / 100); },
             get reportBalance() { return this.reportIncomeTotal - this.reportExpenseTotal; },
-            get reportNetTotal() { return this.reportBalance * ((Number(this.settingsData.finance.staffPercent) || 50) / 100); },
+            get reportNetTotal() { return this.reportOwnerShare - this.reportExpenseTotal; },
 
             get reportTransactions() {
                 const now = new Date();
@@ -2208,17 +2243,40 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
                 if (y > 165) { docPdf.addPage(); y = 18; }
                 docPdf.setFontSize(11);
                 docPdf.text('REKAP KEUANGAN', 14, y);
+                const ownerPct = Number(this.settingsData.finance.ownerPercent) || 50;
+                const staffPct = Number(this.settingsData.finance.staffPercent) || 50;
                 docPdf.autoTable({
                     startY: y + 4,
                     head: [['Keterangan','Nominal (Rp)']],
                     body: [
-                        ['Total Pemasukan', this.formatNum(this.reportIncomeTotal)],
-                        ['Total Pengeluaran', this.formatNum(this.reportExpenseTotal)],
-                        ['Saldo Setelah Pengeluaran', this.formatNum(this.reportBalance)],
-                        [`TOTAL BERSIH (${Number(this.settingsData.finance.staffPercent)||50}%)`, this.formatNum(this.reportNetTotal)]
+                        ['PEMASUKAN', ''],
+                        ['Jumlah Pemasukan', this.formatNum(this.reportIncomeTotal)],
+                        [`Bagian Karyawan (${staffPct}%)`, this.formatNum(this.reportStaffShare)],
+                        [`Bagian Usaha (${ownerPct}%)`, this.formatNum(this.reportOwnerShare)],
+                        ['PENGELUARAN', ''],
+                        ['Jumlah Pengeluaran', this.formatNum(this.reportExpenseTotal)],
+                        ['TOTAL BERSIH', this.formatNum(this.reportNetTotal)]
                     ],
                     styles:{fontSize:9,cellPadding:2.5}, headStyles:{fillColor:[185,28,28]},
-                    didParseCell: data => { if (data.row.index === 3 && data.section === 'body') data.cell.styles.fontStyle = 'bold'; }
+                    didParseCell: data => {
+                        if (data.section === 'body' && [0,4].includes(data.row.index)) data.cell.styles.fontStyle = 'bold';
+                        if (data.section === 'body' && data.row.index === 6) data.cell.styles.fontStyle = 'bold';
+                    }
+                });
+
+                let expenseY = docPdf.lastAutoTable.finalY + 8;
+                if (expenseY > 165) { docPdf.addPage(); expenseY = 18; }
+                docPdf.setFontSize(11);
+                docPdf.text('TABEL PENGELUARAN', 14, expenseY);
+                const expenseRows = this.reportExpenses.map((e, idx) => [
+                    idx + 1, e.date || '-', e.category || '-', e.description || '-', this.formatNum(e.amount)
+                ]);
+                docPdf.autoTable({
+                    startY: expenseY + 4,
+                    head: [['No','Tanggal','Kategori','Keterangan','Nominal (Rp)']],
+                    body: expenseRows.length ? expenseRows : [['-','-','-','Tidak ada pengeluaran pada periode ini.','0']],
+                    foot: [['','','','TOTAL PENGELUARAN', this.formatNum(this.reportExpenseTotal)]],
+                    styles:{fontSize:8,cellPadding:2.5}, headStyles:{fillColor:[185,28,28]}, footStyles:{fontStyle:'bold'}
                 });
 
                 const fileName = `Laporan_Pangkas_Rambut_${this.reportPeriod}_${new Date().toISOString().split('T')[0]}.pdf`;
@@ -2252,13 +2310,18 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
                     addTxSheet('Transaksi', this.reportTransactions);
                     addExpenseSheet('Pengeluaran', this.reportExpenses);
                 }
+                const ownerPct = Number(this.settingsData.finance.ownerPercent) || 50;
+                const staffPct = Number(this.settingsData.finance.staffPercent) || 50;
                 const summary = XLSX.utils.aoa_to_sheet([
                     ['REKAP KEUANGAN PANGKAS RAMBUT NIAS SUMUT'],
                     ['Periode', {today:'Hari Ini',month:'Bulan Ini',all:'Semua Data'}[this.reportPeriod]],
-                    ['Total Pemasukan', this.reportIncomeTotal],
-                    ['Total Pengeluaran', this.reportExpenseTotal],
-                    ['Saldo Setelah Pengeluaran', this.reportBalance],
-                    [`TOTAL BERSIH (${Number(this.settingsData.finance.staffPercent)||50}%)`, this.reportNetTotal]
+                    ['PEMASUKAN', ''],
+                    ['Jumlah Pemasukan', this.reportIncomeTotal],
+                    [`Bagian Karyawan (${staffPct}%)`, this.reportStaffShare],
+                    [`Bagian Usaha (${ownerPct}%)`, this.reportOwnerShare],
+                    ['PENGELUARAN', ''],
+                    ['Jumlah Pengeluaran', this.reportExpenseTotal],
+                    ['TOTAL BERSIH', this.reportNetTotal]
                 ]);
                 XLSX.utils.book_append_sheet(wb, summary, 'Rekap Keuangan');
                 XLSX.writeFile(wb, `Laporan_Pangkas_Rambut_${this.reportPeriod}_${new Date().toISOString().split('T')[0]}.xlsx`);

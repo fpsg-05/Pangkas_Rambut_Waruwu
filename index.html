@@ -762,8 +762,10 @@
                 </div>
                 <div class="flex flex-wrap gap-2">
                     <select x-model="reportPeriod" class="report-period-select px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm font-semibold outline-none focus:ring-2 focus:ring-red-500" aria-label="Periode laporan">
-                        <option value="today">Hari Ini</option>
                         <option value="month">Bulan Ini</option>
+                        <template x-for="key in reportPastMonthKeys" :key="'report-period-'+key">
+                            <option :value="key" x-text="monthLabel(key)"></option>
+                        </template>
                         <option value="all">Semua Bulan</option>
                     </select>
                     <button @click="exportToPDF()" class="app-click px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm shadow transition flex items-center gap-2"><i class="fa-solid fa-file-pdf"></i> PDF</button>
@@ -787,7 +789,7 @@
                     <div class="rounded-2xl border border-red-500/30 bg-slate-950 overflow-hidden">
                         <div class="px-5 py-4 bg-red-600 text-white flex items-center justify-between">
                             <div><h3 class="font-black">REKAP KEUANGAN</h3><p class="text-xs text-red-100 mt-1">Pembagian pendapatan dan hasil bersih periode terpilih.</p></div>
-                            <span class="text-xs font-bold" x-text="reportPeriod === 'today' ? 'Hari Ini' : (reportPeriod === 'month' ? 'Bulan Ini' : 'Semua Data')"></span>
+                            <span class="text-xs font-bold" x-text="reportPeriodLabel"></span>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm">
@@ -820,7 +822,7 @@
                     </div>
                     <template x-if="reportPeriod !== 'all'">
                         <div class="rounded-xl border border-slate-800 overflow-hidden">
-                            <div class="px-4 py-3 bg-slate-800/60 flex items-center justify-between"><span class="font-bold text-white" x-text="reportPeriod === 'today' ? 'Hari Ini' : monthLabel(`${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`)"></span><span class="text-xs text-slate-400" x-text="formatRupiah(reportIncomeTotal)"></span></div>
+                            <div class="px-4 py-3 bg-slate-800/60 flex items-center justify-between"><span class="font-bold text-white" x-text="reportPeriodLabel"></span><span class="text-xs text-slate-400" x-text="formatRupiah(reportIncomeTotal)"></span></div>
                             <div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-slate-800 text-slate-400 text-xs uppercase"><tr><th class="px-4 py-3 text-left">No</th><th class="px-4 py-3 text-left">Faktur</th><th class="px-4 py-3 text-left">Tanggal</th><th class="px-4 py-3 text-left">Pelanggan</th><th class="px-4 py-3 text-left">Layanan</th><th class="px-4 py-3 text-right">Total</th></tr></thead><tbody class="divide-y divide-slate-800"><template x-for="(t,i) in reportTransactions" :key="'r-'+t.firestoreId"><tr class="hover:bg-slate-800/40"><td class="px-4 py-3 text-slate-500" x-text="i+1"></td><td class="px-4 py-3 font-mono text-red-400" x-text="t.invoiceNo"></td><td class="px-4 py-3 text-slate-400" x-text="formatDateTimeFull(t.timestamp)"></td><td class="px-4 py-3 text-white" x-text="t.customerName || 'Pelanggan'"></td><td class="px-4 py-3 text-slate-300" x-text="t.category || '-' "></td><td class="px-4 py-3 text-right font-bold text-emerald-400" x-text="formatRupiah(t.total)"></td></tr></template></tbody></table></div>
                         </div>
                     </template>
@@ -1232,7 +1234,7 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
             searchQuery: '',
             showReceiptModal: false,
             selectedReceipt: null,
-            reportPeriod: 'today',
+            reportPeriod: 'month',
             selectedIncomeFilter: 'today',
             historyMonth: 'all',
             audioCtx: null,
@@ -2153,8 +2155,23 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
             get reportMonthKeys() {
                 const keys = new Set();
                 this.transactions.forEach(t => { const d = new Date(t.timestamp); if (!isNaN(d)) keys.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`); });
-                this.expenses.forEach(e => { if (e.date) keys.add(e.date.slice(0,7)); });
+                this.expenses.forEach(e => { if (e.date && /^\\d{4}-\\d{2}/.test(e.date)) keys.add(e.date.slice(0,7)); });
                 return [...keys].sort().reverse();
+            },
+
+            get currentReportMonthKey() {
+                const now = new Date();
+                return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+            },
+
+            get reportPastMonthKeys() {
+                return this.reportMonthKeys.filter(key => key < this.currentReportMonthKey);
+            },
+
+            get reportPeriodLabel() {
+                if (this.reportPeriod === 'all') return 'Semua Bulan';
+                if (this.reportPeriod === 'month') return 'Bulan Ini';
+                return this.monthLabel(this.reportPeriod);
             },
 
             monthLabel(key) {
@@ -2172,13 +2189,11 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
             },
 
             get reportExpenses() {
-                const now = new Date();
                 return this.expenses.filter(e => {
                     if (!e.date) return false;
-                    const d = new Date(e.date + 'T00:00:00');
-                    if (this.reportPeriod === 'today') return d.toDateString() === now.toDateString();
-                    if (this.reportPeriod === 'month') return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-                    return true;
+                    if (this.reportPeriod === 'all') return true;
+                    if (this.reportPeriod === 'month') return e.date.slice(0,7) === this.currentReportMonthKey;
+                    return e.date.slice(0,7) === this.reportPeriod;
                 });
             },
 
@@ -2190,12 +2205,13 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
             get reportNetTotal() { return this.reportOwnerShare - this.reportExpenseTotal; },
 
             get reportTransactions() {
-                const now = new Date();
                 return this.transactions.filter(t => {
                     const d = new Date(t.timestamp);
-                    if (this.reportPeriod === 'today') return d.toDateString() === now.toDateString();
-                    if (this.reportPeriod === 'month') return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-                    return true;
+                    if (isNaN(d)) return false;
+                    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+                    if (this.reportPeriod === 'all') return true;
+                    if (this.reportPeriod === 'month') return key === this.currentReportMonthKey;
+                    return key === this.reportPeriod;
                 });
             },
 
@@ -2210,7 +2226,7 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
                 }
                 const { jsPDF } = window.jspdf;
                 const docPdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-                const periodLabel = { today: 'Hari Ini', month: 'Bulan Ini', all: 'Semua Data' }[this.reportPeriod] || 'Laporan';
+                const periodLabel = this.reportPeriodLabel;
                 docPdf.setFontSize(16);
                 docPdf.text(this.settingsData.profile.name || 'PANGKAS RAMBUT NIAS SUMUT', 14, 14);
                 docPdf.setFontSize(9);
@@ -2236,7 +2252,7 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
                         y = renderTable(txs, 'Periode ' + this.monthLabel(key), y);
                     }
                 } else {
-                    renderTable(this.reportTransactions, '', 31);
+                    renderTable(this.reportTransactions, this.reportPeriodLabel, 31);
                 }
 
                 let y = docPdf.lastAutoTable ? docPdf.lastAutoTable.finalY + 10 : 45;
@@ -2279,14 +2295,14 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
                     styles:{fontSize:8,cellPadding:2.5}, headStyles:{fillColor:[185,28,28]}, footStyles:{fontStyle:'bold'}
                 });
 
-                const fileName = `Laporan_Pangkas_Rambut_${this.reportPeriod}_${new Date().toISOString().split('T')[0]}.pdf`;
+                const fileName = `Laporan_Pangkas_Rambut_${this.reportPeriod === 'all' ? 'Semua_Bulan' : (this.reportPeriod === 'month' ? this.currentReportMonthKey : this.reportPeriod)}_${new Date().toISOString().split('T')[0]}.pdf`;
                 docPdf.save(fileName);
                 this.showToast('Laporan PDF berhasil dibuat');
             },
 
             exportToExcel() {
                 if (typeof XLSX === 'undefined') { alert('Library Excel belum siap. Silakan refresh halaman!'); return; }
-                if (this.reportTransactions.length === 0) { alert('Tidak ada data transaksi pada periode laporan ini!'); return; }
+                if (this.reportTransactions.length === 0 && this.reportExpenses.length === 0) { alert('Tidak ada data pada periode laporan ini!'); return; }
                 const wb = XLSX.utils.book_new();
                 const addTxSheet = (sheetName, txs) => {
                     const rows = txs.map((t, idx) => ({
@@ -2314,7 +2330,7 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
                 const staffPct = Number(this.settingsData.finance.staffPercent) || 50;
                 const summary = XLSX.utils.aoa_to_sheet([
                     ['REKAP KEUANGAN PANGKAS RAMBUT NIAS SUMUT'],
-                    ['Periode', {today:'Hari Ini',month:'Bulan Ini',all:'Semua Data'}[this.reportPeriod]],
+                    ['Periode', this.reportPeriodLabel],
                     ['PEMASUKAN', ''],
                     ['Jumlah Pemasukan', this.reportIncomeTotal],
                     [`Bagian Karyawan (${staffPct}%)`, this.reportStaffShare],
@@ -2324,7 +2340,7 @@ window.BARBER_I18N_ID = Object.fromEntries(Object.entries(window.BARBER_I18N_EN)
                     ['TOTAL BERSIH', this.reportNetTotal]
                 ]);
                 XLSX.utils.book_append_sheet(wb, summary, 'Rekap Keuangan');
-                XLSX.writeFile(wb, `Laporan_Pangkas_Rambut_${this.reportPeriod}_${new Date().toISOString().split('T')[0]}.xlsx`);
+                XLSX.writeFile(wb, `Laporan_Pangkas_Rambut_${this.reportPeriod === 'all' ? 'Semua_Bulan' : (this.reportPeriod === 'month' ? this.currentReportMonthKey : this.reportPeriod)}_${new Date().toISOString().split('T')[0]}.xlsx`);
                 this.showToast('Laporan Excel berhasil dibuat');
             },
 
